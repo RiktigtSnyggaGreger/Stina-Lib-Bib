@@ -20,6 +20,7 @@ namespace Biblans_Tråkia_Surtant
 
             // Automatically load the users into the grid when this page opens
             LoadUsers();
+            LoadActiveLoans();
         }
 
         private async void LoadUsers()
@@ -50,6 +51,47 @@ namespace Biblans_Tråkia_Surtant
             {
                 MessageBox.Show($"Kunde inte hämta användare:\n{ex.Message}",
                                 "Fel vid laddning",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+        }
+
+        private async void LoadActiveLoans()
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    // MUST include Loans.Loan_ID and Loans.Copy_ID here!
+                    string query = @"
+                SELECT 
+                    Loans.Loan_ID,
+                    Loans.Copy_ID,
+                    CONCAT(User.Name, ' ', User.Lastname) AS FullName,
+                    Media.Name AS MediaTitle,
+                    Loans.DueDate
+                FROM Loans
+                JOIN User ON Loans.User_ID = User.User_ID
+                JOIN Copies ON Loans.Copy_ID = Copies.Copy_ID
+                JOIN Media ON Copies.Media_ID = Media.Media_ID
+                WHERE Loans.IsReturned = FALSE
+                ORDER BY Loans.DueDate ASC;";
+
+                    using (var cmd = new MySqlCommand(query, connection))
+                    using (var adapter = new MySqlDataAdapter(cmd))
+                    {
+                        DataTable dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+                        ActiveLoansGrid.ItemsSource = dataTable.DefaultView;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Kunde inte hämta aktiva lån:\n{ex.Message}",
+                                "Fel vid laddning av lån",
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
             }
@@ -180,5 +222,72 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
+        private void ActiveLoansGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private async void Btn_Admin_Deloan_Click(object sender, RoutedEventArgs e)
+        {
+            // Get the button that was clicked and extract its row data
+            Button button = sender as Button;
+            if (button?.DataContext is DataRowView selectedRow)
+            {
+                int loanId = Convert.ToInt32(selectedRow["Loan_ID"]);
+                int copyId = Convert.ToInt32(selectedRow["Copy_ID"]);
+                string user = selectedRow["FullName"].ToString();
+                string title = selectedRow["MediaTitle"].ToString();
+
+                MessageBoxResult confirm = MessageBox.Show(
+                    $"Vill du återlämna \"{title}\" lånad av {user}?",
+                    "Bekräfta återlämning",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (confirm != MessageBoxResult.Yes)
+                    return;
+
+                try
+                {
+                    using (var connection = new MySqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
+
+                        // 1. Mark loan as returned and set ReturnedDate
+                        string updateLoanQuery = @"
+                    UPDATE Loans 
+                    SET IsReturned = TRUE, ReturnedDate = NOW() 
+                    WHERE Loan_ID = @LoanId;";
+
+                        using (var cmd = new MySqlCommand(updateLoanQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@LoanId", loanId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+
+                        // 2. Mark copy as available again
+                        string updateCopyQuery = @"
+                    UPDATE Copies 
+                    SET Is_Loaned = FALSE 
+                    WHERE Copy_ID = @CopyId;";
+
+                        using (var cmd = new MySqlCommand(updateCopyQuery, connection))
+                        {
+                            cmd.Parameters.AddWithValue("@CopyId", copyId);
+                            await cmd.ExecuteNonQueryAsync();
+                        }
+                    }
+
+                    MessageBox.Show("Lånet har återlämnats!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // Refresh grid
+                    LoadActiveLoans();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Kunde inte återlämna lån:\n{ex.Message}", "Fel", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }
