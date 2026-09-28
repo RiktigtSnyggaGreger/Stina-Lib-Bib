@@ -18,7 +18,7 @@ namespace Biblans_Tråkia_Surtant
     /// </summary>
     public partial class MainWindow : Window
     {
-        private string connectionString = "Server=192.168.216.122;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;";
+        private string connectionString = "Server=127.0.0.1;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;";
 
         public MainWindow()
         {
@@ -62,7 +62,7 @@ namespace Biblans_Tråkia_Surtant
                                 string lastName = reader.GetString("Lastname");
                                 bool isAdmin = reader.GetBoolean("IsAdmin");
 
-                                MessageBox.Show($"Välkommen {firstName} {lastName}!\nRoll: {(isAdmin ? "Admin" : "Låntagare")}",
+                                MessageBox.Show($"Välkommen {firstName} {lastName}!\nRoll: {(isAdmin ? "Admin" : "användare")}",
                                                 "Inloggad",
                                                 MessageBoxButton.OK,
                                                 MessageBoxImage.Information);
