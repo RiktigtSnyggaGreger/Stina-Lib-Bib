@@ -1,28 +1,60 @@
 ﻿<Page x:Class="Biblans_Tråkia_Surtant.AdminPage"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      Title="AdminPage" Height="450" Width="800">
+      Title="AdminPage" Width="800">
     <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
         <Frame x:Name="AdminFrame" NavigationUIVisibility="Hidden"/>
 
-        <TextBlock Grid.Row="0" Text="Användarhantering (Admin)" FontSize="20" FontWeight="Bold" Margin="0,0,0,15"/>
+        <!-- Add ScrollViewer here -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="CreateUserPanel" HorizontalAlignment="Center" VerticalAlignment="Top">
 
-        <!-- DataGrid to show users -->
-        <DataGrid Grid.Row="1" x:Name="Admin_Show_Users" AutoGenerateColumns="True" IsReadOnly="True"/>
-        <StackPanel x:Name="CreateUserPanel" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock Text="Create User" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+                <TextBlock Text="Create User" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
 
+                <StackPanel Margin="5" Orientation="Horizontal">
+                    <TextBlock Text="Name:" Width="70" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_User_Name" Width="220" Margin="3"/>
+                </StackPanel>
 
-            <TextBox x:Name="Create_User_Name" Text="Name" Width="220" Margin="5"/>
-            <TextBox x:Name="Create_User_Lastname" Text="Lastname" Width="220" Margin="5"/>
-            <CheckBox x:Name="Create_User_IsAdmin" Content="Is Admin?" Width="220" Margin="5"/>
-            <TextBox x:Name="Create_User_Email" Text="Email" Width="220" Margin="5"/>
-            <PasswordBox x:Name="Create_User_Password" Width="220" Margin="5" ToolTip="Ange ett säkert lösenord"/>
-            <Button x:Name="Btn_Create_User" Content="Create user" Click="Btn_Create_User_Click" Width="220" Margin="10"/>
-        </StackPanel>
+                <StackPanel Margin="5" Orientation="Horizontal">
+                    <TextBlock Text="Last name:" Width="70" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_User_Lastname" Width="220" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="5" Orientation="Horizontal">
+                    <TextBlock Text="Admin?:" Width="70" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="Create_User_IsAdmin" Margin="3" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Margin="5" Orientation="Horizontal">
+                    <TextBlock Text="Email:" Width="70" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_User_Email" Width="220" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="5" Orientation="Horizontal">
+                    <TextBlock Text="Password:" Width="70" VerticalAlignment="Center"/>
+                    <PasswordBox x:Name="Create_User_Password" Width="220" Margin="3" ToolTip="Ange ett säkert lösenord"/>
+                </StackPanel>
+
+                <Button x:Name="Btn_Create_User" Content="Create user" Click="Btn_Create_User_Click" Width="220" Margin="8"/>
+
+                <TextBlock Text="Remove Users" FontSize="18" FontWeight="Bold" Margin="0,15,0,5" HorizontalAlignment="Center"/>
+
+                <StackPanel Margin="0,5,0,0" Orientation="Vertical" HorizontalAlignment="Center">
+                    <DataGrid x:Name="Admin_Show_Users" 
+                              AutoGenerateColumns="True" 
+                              IsReadOnly="True" 
+                              MaxHeight="120"/>
+
+                    <Button x:Name="Btn_Delete_Selected" 
+                            Content="Ta bort markerad användare" 
+                            Click="Btn_Delete_Selected_Click" 
+                            Padding="10,5" 
+                            Width="241"
+                            Margin="0,8,0,0"
+                            HorizontalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Page>

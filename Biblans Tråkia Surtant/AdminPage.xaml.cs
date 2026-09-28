@@ -118,5 +118,67 @@ namespace Biblans_Tråkia_Surtant
                                 MessageBoxImage.Error);
             }
         }
+
+        private async void Btn_Delete_Selected_Click(object sender, RoutedEventArgs e)
+        {
+            // 1. Check if the user has selected a row in the DataGrid
+            if (Admin_Show_Users.SelectedItem == null)
+            {
+                MessageBox.Show("Vänligen markera en användare i tabellen först.",
+                                "Ingen markering",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                return;
+            }
+
+            // 2. Cast the selected item to DataRowView to access column values
+            DataRowView selectedRow = (DataRowView)Admin_Show_Users.SelectedItem;
+            int userId = Convert.ToInt32(selectedRow["User_ID"]);
+            string userName = selectedRow["Name"].ToString();
+            string userLastName = selectedRow["Lastname"].ToString();
+
+            // 3. Ask for confirmation before deleting
+            MessageBoxResult confirm = MessageBox.Show(
+                $"Är du säker på att du vill ta bort {userName} {userLastName} (ID: {userId})?",
+                "Bekräfta borttagning",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (confirm != MessageBoxResult.Yes)
+                return;
+
+            // 4. Perform SQL Delete
+            try
+            {
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    string query = "DELETE FROM User WHERE User_ID = @UserId;";
+
+                    using (var cmd = new MySqlCommand(query, connection))
+                    {
+                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        await cmd.ExecuteNonQueryAsync();
+                    }
+                }
+
+                MessageBox.Show($"Användare {userName} {userLastName} har tagits bort.",
+                                "Framgång",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Information);
+
+                // 5. Refresh DataGrid
+                LoadUsers();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Kunde inte ta bort användaren:\n{ex.Message}",
+                                "Fel vid borttagning",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+        }
+
     }
 }
