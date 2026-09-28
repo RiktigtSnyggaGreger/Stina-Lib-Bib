@@ -71,13 +71,14 @@ namespace Biblans_Tråkia_Surtant
                                 if (isAdmin)
                                 {
                                     LoginPanel.Visibility = Visibility.Collapsed;
-                                    // User is an admin -> Load AdminPage inside MainFrame
+                                    //User is an admin -> Load AdminPage inside MainFrame
                                     MainFrame.Navigate(new AdminPage());
                                 }
                                 else
                                 {
                                     // User is a standard user -> Load StartPage inside MainFrame
-                                    // MainFrame.Navigate(new StartPage()); 
+                                    LoginPanel.Visibility = Visibility.Collapsed;
+                                    MainFrame.Navigate(new StartPage()); 
                                     Console.WriteLine("sigma");
                                 }
                                 }
