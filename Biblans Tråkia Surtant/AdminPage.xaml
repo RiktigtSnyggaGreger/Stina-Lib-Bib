@@ -13,5 +13,16 @@
 
         <!-- DataGrid to show users -->
         <DataGrid Grid.Row="1" x:Name="Admin_Show_Users" AutoGenerateColumns="True" IsReadOnly="True"/>
+        <StackPanel x:Name="CreateUserPanel" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <TextBlock Text="Create User" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+
+
+            <TextBox x:Name="Create_User_Name" Text="Name" Width="220" Margin="5"/>
+            <TextBox x:Name="Create_User_Lastname" Text="Lastname" Width="220" Margin="5"/>
+            <CheckBox x:Name="Create_User_IsAdmin" Content="Is Admin?" Width="220" Margin="5"/>
+            <TextBox x:Name="Create_User_Email" Text="Email" Width="220" Margin="5"/>
+            <PasswordBox x:Name="Create_User_Password" Width="220" Margin="5" ToolTip="Ange ett säkert lösenord"/>
+            <Button x:Name="Btn_Create_User" Content="Create user" Click="Btn_Create_User_Click" Width="220" Margin="10"/>
+        </StackPanel>
     </Grid>
 </Page>
