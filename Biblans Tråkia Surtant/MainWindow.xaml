@@ -7,6 +7,18 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="20">
 
+                <Button Content="Check connection" 
+                Click="Btn_Connection_Click" 
+                Padding="8" FontSize="14" FontWeight="Bold" Margin="0,5,0,5"/>
+                <ListBox x:Name="Connection_Box" Height="120" FontSize="13" Margin="0,0,0,15"/>
+
+                <TextBox x:Name="Login_Email_TextBox" Width="200" Margin="5"/>
+                <PasswordBox x:Name="Login_Password_Box" Width="200" Margin="5"/>
+                <Button x:Name="Btn_Connection" Content="Connect &amp; Login" Click="Btn_Connection_Click"/>
+            </StackPanel>
+        </ScrollViewer>
     </Grid>
 </Window>
