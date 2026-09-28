@@ -61,6 +61,8 @@ namespace Biblans_Tråkia_Surtant
                                 string firstName = reader.GetString("Name");
                                 string lastName = reader.GetString("Lastname");
                                 bool isAdmin = reader.GetBoolean("IsAdmin");
+                                Session.CurrentUserId = userId;
+                                Session.CurrentUserName = $"{firstName} {lastName}";
 
                                 MessageBox.Show($"Välkommen {firstName} {lastName}!\nRoll: {(isAdmin ? "Admin" : "användare")}",
                                                 "Inloggad",
@@ -78,8 +80,7 @@ namespace Biblans_Tråkia_Surtant
                                 {
                                     // User is a standard user -> Load StartPage inside MainFrame
                                     LoginPanel.Visibility = Visibility.Collapsed;
-                                    MainFrame.Navigate(new StartPage()); 
-                                    Console.WriteLine("sigma");
+                                    MainFrame.Navigate(new StartPage(userId));
                                 }
                                 }
                             else

@@ -1,0 +1,32 @@
+<Page x:Class="Biblans_Tråkia_Surtant.MyLoansPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Mina lån">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock x:Name="Txt_Heading" Text="Mina lån" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                <Button Content="Lämna tillbaka valt" Click="Btn_Return_Click" Padding="12,6" Margin="0,0,8,0"/>
+                <Button Content="Uppdatera" Click="Btn_Refresh_Click" Padding="12,6"/>
+                <Button Content="Till katalogen" Click="Btn_Back_Click" Padding="12,6" Margin="8,0,0,0"/>
+            </StackPanel>
+        </DockPanel>
+
+        <DataGrid x:Name="LoansGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Typ" Binding="{Binding MediaType}" Width="*"/>
+                <DataGridTextColumn Header="Titel" Binding="{Binding Title}" Width="2*"/>
+                <DataGridTextColumn Header="Författare" Binding="{Binding Authors}" Width="2*"/>
+                <DataGridTextColumn Header="Lånad" Binding="{Binding BorrowedDate, StringFormat={}{0:yyyy-MM-dd}}" Width="*"/>
+                <DataGridTextColumn Header="Återlämnas senast" Binding="{Binding DueDate, StringFormat={}{0:yyyy-MM-dd}}" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <TextBlock x:Name="Txt_Status" Grid.Row="2" Margin="0,8,0,0"/>
+    </Grid>
+</Page>
