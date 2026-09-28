@@ -68,7 +68,19 @@ namespace Biblans_Tråkia_Surtant
                                                 MessageBoxImage.Information);
 
                                 // Navigate or load user session here
-                            }
+                                if (isAdmin)
+                                {
+                                    LoginPanel.Visibility = Visibility.Collapsed;
+                                    // User is an admin -> Load AdminPage inside MainFrame
+                                    MainFrame.Navigate(new AdminPage());
+                                }
+                                else
+                                {
+                                    // User is a standard user -> Load StartPage inside MainFrame
+                                    // MainFrame.Navigate(new StartPage()); 
+                                    Console.WriteLine("sigma");
+                                }
+                                }
                             else
                             {
                                 MessageBox.Show("Felaktig e-post eller lösenord.", "Inloggning misslyckades", MessageBoxButton.OK, MessageBoxImage.Error);
