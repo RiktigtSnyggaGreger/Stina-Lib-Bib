@@ -1,0 +1,187 @@
+﻿<Page x:Class="Biblans_Tråkia_Surtant.AdminMeidaPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:local="clr-namespace:Biblans_Tråkia_Surtant"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="AdminMeidaPage"
+      Loaded="Page_Loaded">
+
+    <Grid Margin="20">
+        <!-- Define 3 equal columns -->
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- LEFT COLUMN (Column 0): All Media List -->
+        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="10">
+            <StackPanel HorizontalAlignment="Stretch">
+                <TextBlock Text="All Media" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
+
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" HorizontalAlignment="Center">
+
+                    <TextBox x:Name="Txt_Search_Media" 
+             Width="180" 
+             Padding="3" 
+             TextChanged="Txt_Search_Media_TextChanged" 
+             ToolTip="Sök på Media ID, Titel eller Författare"/>
+                </StackPanel>
+
+                <DataGrid x:Name="ShowMediaGrid" 
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          GridLinesVisibility="Horizontal" 
+                          SelectionChanged="ShowMediaGrid_SelectionChanged">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="MediaID" Binding="{Binding Media_ID}" Width="Auto"/>
+                        <DataGridTextColumn Header="Media" Binding="{Binding Title}" Width="*"/>
+                        <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="Auto"/>
+                        <DataGridTextColumn Header="Author" Binding="{Binding MediaAuthor}" Width="*"/>
+
+                        <!-- Button column to delete/remove media -->
+                        <DataGridTemplateColumn Header="Actions" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Content="+ Exemplar" 
+                        Click="Btn_Add_Copies_Click" 
+                        Padding="6,2" 
+                        Margin="0,0,4,0"
+                        Background="#E1F5FE"
+                        BorderBrush="#81D4FA"/>
+
+                                        <Button Content="Ta bort" 
+                        Click="Btn_Admin_Remove_Media_Click" 
+                        Padding="6,2" 
+                        Margin="0"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <TextBlock Text="Alla Exemplar (Copies)" FontSize="20" FontWeight="Bold" Margin="0,20,0,10" HorizontalAlignment="Center"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8" HorizontalAlignment="Center">
+                    <TextBox x:Name="Txt_Search_Copies" 
+             Width="180" 
+             Padding="3" 
+             TextChanged="Txt_Search_Copies_TextChanged" 
+             ToolTip="Sök på Copy ID, Media ID eller Titel"/>
+                </StackPanel>
+                
+                <DataGrid x:Name="ShowCopiesGrid" 
+                  AutoGenerateColumns="False" 
+                  IsReadOnly="True" 
+                  GridLinesVisibility="Horizontal"
+                  MaxHeight="200">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Copy ID" Binding="{Binding Copy_ID}" Width="Auto"/>
+                        <DataGridTextColumn Header="Media ID" Binding="{Binding Media_ID}" Width="Auto"/>
+                        <DataGridTextColumn Header="Titel" Binding="{Binding Title}" Width="*"/>
+                        <DataGridTextColumn Header="Utlånad" Binding="{Binding Is_Loaned}" Width="Auto"/>
+
+                        <!-- Button to delete an individual copy -->
+                        <DataGridTemplateColumn Header="Ta bort" Width="Auto">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Ta bort" 
+                                    Click="Btn_Admin_Remove_Copy_Click" 
+                                    Padding="5,2" 
+                                    Margin="0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- MIDDLE COLUMN (Column 1): Add/Edit Media Forms -->
+        <!-- MIDDLE COLUMN (Column 1): Create Media & Author Form -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10">
+            <StackPanel x:Name="CreateMediaPanel" HorizontalAlignment="Center" VerticalAlignment="Top">
+
+                <TextBlock Text="Skapa Nytt Media" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+
+                <!-- Media Info -->
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Titel:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_Title" Width="180" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Värde (kr):" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_Value" Width="180" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="SAB-kod:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_SAB" Width="180" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Utgivningsår:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_Year" Width="180" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Språk:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_Language" Width="180" Margin="3" Text="Svenska"/>
+                </StackPanel>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Beskrivning:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_Description" Width="180" Height="50" Margin="3" TextWrapping="Wrap" AcceptsReturn="True"/>
+                </StackPanel>
+
+                <!-- Author Info Section -->
+                <TextBlock Text="Författare" FontSize="16" FontWeight="Bold" Margin="0,15,0,5" HorizontalAlignment="Center"/>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Förnamn:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Author_Name" Width="180" Margin="3"/>
+                </StackPanel>
+
+                <StackPanel Margin="3" Orientation="Horizontal">
+                    <TextBlock Text="Efternamn:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Author_LastName" Width="180" Margin="3"/>
+                </StackPanel>
+
+                <Button x:Name="Btn_Create_Media" 
+                Content="Skapa Media &amp; Författare" 
+                Click="Btn_Create_Media_Click" 
+                Width="180" 
+                Padding="6,3" 
+                Margin="0,15,0,0" 
+                HorizontalAlignment="Center"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- RIGHT COLUMN (Column 2): Navigation and Actions -->
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="10">
+            <StackPanel x:Name="MediaManagementPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+                <Button x:Name="Btn_Admin_Media_Page" 
+                        Content="User sida" 
+                        Click="Btn_Goto_Admin_User_Click" 
+                        Padding="8,4" 
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Center"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Navigation frame spanning all 3 columns if used as an overlay -->
+        <Frame x:Name="Admin_Media_Frame" 
+               Grid.Column="0" 
+               Grid.ColumnSpan="3" 
+               Background="White" 
+               Visibility="Collapsed" 
+               NavigationUIVisibility="Hidden"/>
+    </Grid>
+</Page>
