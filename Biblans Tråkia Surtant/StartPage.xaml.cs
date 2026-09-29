@@ -101,6 +101,7 @@ SELECT m.Media_ID, m.Name, m.Release_Year, m.Language, m.SAB, m.Description,
            WHEN b.Media_ID IS NOT NULL THEN 'Bok'
            WHEN movie.Media_ID IS NOT NULL THEN 'Film'
            WHEN audio.Media_ID IS NOT NULL THEN 'Ljudbok'
+           ELSE 'Bok'
        END AS MediaType,
        COALESCE(b.ISBN, audio.ISBN) AS ISBN,
        b.Pages,
@@ -124,7 +125,6 @@ LEFT JOIN (
     FROM Copies
     GROUP BY Media_ID
 ) copies ON copies.Media_ID = m.Media_ID
-WHERE b.Media_ID IS NOT NULL OR movie.Media_ID IS NOT NULL OR audio.Media_ID IS NOT NULL
 ORDER BY m.Name;";
 
         var mediaItems = new List<MediaItem>();
@@ -237,22 +237,6 @@ ORDER BY m.Name;";
             {
                 lockMedia.Parameters.AddWithValue("@mediaId", mediaId);
                 if (await lockMedia.ExecuteScalarAsync() is null)
-                {
-                    await transaction.RollbackAsync();
-                    return false;
-                }
-            }
-
-            const string validMediaSql = @"
-SELECT EXISTS (
-    SELECT Media_ID FROM Book WHERE Media_ID = @mediaId
-    UNION ALL SELECT Media_ID FROM Movie WHERE Media_ID = @mediaId
-    UNION ALL SELECT Media_ID FROM AudioBook WHERE Media_ID = @mediaId
-);";
-            await using (var validateMedia = new MySqlCommand(validMediaSql, connection, transaction))
-            {
-                validateMedia.Parameters.AddWithValue("@mediaId", mediaId);
-                if (Convert.ToInt32(await validateMedia.ExecuteScalarAsync()) == 0)
                 {
                     await transaction.RollbackAsync();
                     return false;
