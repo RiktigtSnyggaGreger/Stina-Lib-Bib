@@ -25,6 +25,7 @@
                 <DataGridTextColumn Header="Författare" Binding="{Binding Authors}" Width="2*"/>
                 <DataGridTextColumn Header="Lånad" Binding="{Binding BorrowedDate, StringFormat={}{0:yyyy-MM-dd}}" Width="*"/>
                 <DataGridTextColumn Header="Återlämnas senast" Binding="{Binding DueDate, StringFormat={}{0:yyyy-MM-dd}}" Width="*"/>
+                <DataGridTextColumn Header="Avgift" Binding="{Binding InvoiceAmount}" Width="*"/>
             </DataGrid.Columns>
         </DataGrid>
         <TextBlock x:Name="Txt_Status" Grid.Row="2" Margin="0,8,0,0"/>
