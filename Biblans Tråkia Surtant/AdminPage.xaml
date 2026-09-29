@@ -11,11 +11,17 @@
             <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
 
+        <!-- Define rows -->
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
+        </Grid.RowDefinitions>
+
         <!-- Hidden navigation frame -->
         <Frame x:Name="AdminFrame" NavigationUIVisibility="Hidden"/>
 
         <!-- LEFT COLUMN (Column 0): Active Loans -->
-        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="10">
+        <ScrollViewer Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="10">
             <StackPanel HorizontalAlignment="Stretch">
                 <TextBlock Text="Active Loans" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
 
@@ -95,10 +101,15 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- RIGHT COLUMN (Column 2): Reserved for media management / third section -->
+        <!-- RIGHT COLUMN (Column 2):  / third section -->
         <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="10">
             <StackPanel x:Name="MediaManagementPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top">
-                <!-- Add your media controls here -->
+                <Button x:Name="Btn_Admin_Media_Page" 
+                    Content="Media sida" 
+                    Click="Btn_Goto_Media_Click" 
+                    Padding="8,4" 
+                    Margin="0,8,0,0"
+                    HorizontalAlignment="Center"/>
             </StackPanel>
         </ScrollViewer>
     </Grid>

@@ -161,6 +161,16 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
+
+
+        private void Btn_Goto_Media_Click(object sender, RoutedEventArgs e)
+        {
+            
+            this.NavigationService?.Navigate(new AdminMeidaPage());
+        }
+
+
+
         private async void Btn_Delete_Selected_Click(object sender, RoutedEventArgs e)
         {
             // 1. Check if the user has selected a row in the DataGrid
@@ -173,13 +183,13 @@ namespace Biblans_Tråkia_Surtant
                 return;
             }
 
-            // 2. Cast the selected item to DataRowView to access column values
+            // Cast the selected item to DataRowView to access column values
             DataRowView selectedRow = (DataRowView)Admin_Show_Users.SelectedItem;
             int userId = Convert.ToInt32(selectedRow["User_ID"]);
             string userName = selectedRow["Name"].ToString();
             string userLastName = selectedRow["Lastname"].ToString();
 
-            // 3. Ask for confirmation before deleting
+            // Ask for confirmation before deleting
             MessageBoxResult confirm = MessageBox.Show(
                 $"Är du säker på att du vill ta bort {userName} {userLastName} (ID: {userId})?",
                 "Bekräfta borttagning",
@@ -189,7 +199,7 @@ namespace Biblans_Tråkia_Surtant
             if (confirm != MessageBoxResult.Yes)
                 return;
 
-            // 4. Perform SQL Delete
+            // SQL Delete
             try
             {
                 using (var connection = new MySqlConnection(connectionString))
@@ -210,7 +220,7 @@ namespace Biblans_Tråkia_Surtant
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Information);
 
-                // 5. Refresh DataGrid
+                // Refresh DataGrid
                 LoadUsers();
             }
             catch (Exception ex)
