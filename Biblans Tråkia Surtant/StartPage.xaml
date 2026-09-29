@@ -16,6 +16,9 @@
         </DockPanel>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Sök:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox x:Name="Txt_Search" Width="240" Padding="5" VerticalContentAlignment="Center"
+                     TextChanged="Txt_Search_TextChanged" Margin="0,0,8,0"/>
             <Button Content="Uppdatera lista" Click="Btn_Refresh_Click" Padding="12,6"/>
             <Button Content="Låna valt material" Click="Btn_Borrow_Click" Padding="12,6" Margin="8,0,0,0"/>
         </StackPanel>

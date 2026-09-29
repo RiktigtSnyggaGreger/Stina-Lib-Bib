@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Threading;
 using MySqlConnector;
 
 namespace Biblans_Tråkia_Surtant;
@@ -11,26 +14,77 @@ public partial class StartPage : Page
 {
     private const string ConnectionString = "Server=127.0.0.1;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;";
     private readonly int _userId;
+    private List<MediaItem> _allMedia = new();
+    private ICollectionView? _mediaView;
+    private readonly DispatcherTimer _overdueInvoiceTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+    private bool _isUpdatingInvoices;
 
     public StartPage(int userId)
     {
         InitializeComponent();
         _userId = userId;
         Txt_Welcome.Text = $"Välkommen, {Session.CurrentUserName ?? "låntagare"}!";
+        _overdueInvoiceTimer.Tick += OverdueInvoiceTimer_Tick;
         Loaded += StartPage_Loaded;
+        Unloaded += StartPage_Unloaded;
     }
 
     private async void StartPage_Loaded(object sender, RoutedEventArgs e)
     {
         await LoadMediaAsync();
+        await UpdateOverdueInvoicesAsync();
+        _overdueInvoiceTimer.Start();
+    }
+
+    private void StartPage_Unloaded(object sender, RoutedEventArgs e)
+        => _overdueInvoiceTimer.Stop();
+
+    private async void OverdueInvoiceTimer_Tick(object? sender, EventArgs e)
+        => await UpdateOverdueInvoicesAsync();
+
+    private async Task UpdateOverdueInvoicesAsync()
+    {
+        if (_isUpdatingInvoices)
+            return;
+
+        _isUpdatingInvoices = true;
+        const string sql = @"
+UPDATE Loans l
+JOIN Copies c ON c.Copy_ID = l.Copy_ID
+JOIN Media m ON m.Media_ID = c.Media_ID
+SET l.InvoiceAmount = CEILING(COALESCE(m.Value, 0) * 1.5)
+WHERE l.User_ID = @userId
+  AND l.IsReturned = 0
+  AND l.DueDate < UTC_TIMESTAMP()
+  AND l.InvoiceAmount = 0;";
+
+        try
+        {
+            await using var connection = new MySqlConnection(ConnectionString);
+            await connection.OpenAsync();
+            await using var command = new MySqlCommand(sql, connection);
+            command.Parameters.AddWithValue("@userId", _userId);
+            await command.ExecuteNonQueryAsync();
+        }
+        catch (Exception ex)
+        {
+            Txt_Status.Text = $"Kunde inte kontrollera förseningsavgifter: {ex.Message}";
+        }
+        finally
+        {
+            _isUpdatingInvoices = false;
+        }
     }
 
     private async Task LoadMediaAsync()
     {
         try
         {
-            MediaGrid.ItemsSource = await GetMediaAsync();
-            Txt_Status.Text = $"Visar {MediaGrid.Items.Count} böcker, filmer och ljudböcker.";
+            _allMedia = await GetMediaAsync();
+            _mediaView = CollectionViewSource.GetDefaultView(_allMedia);
+            _mediaView.Filter = MatchesSearch;
+            MediaGrid.ItemsSource = _mediaView;
+            UpdateCatalogStatus();
         }
         catch (Exception ex)
         {
@@ -108,6 +162,39 @@ ORDER BY m.Name;";
     private static int? GetNullableInt(MySqlDataReader reader, string column)
         => reader.IsDBNull(reader.GetOrdinal(column)) ? null : reader.GetInt32(column);
 
+    private bool MatchesSearch(object item)
+    {
+        if (item is not MediaItem media)
+            return false;
+
+        var searchText = Txt_Search.Text.Trim();
+        if (searchText.Length == 0)
+            return true;
+
+        return Contains(media.Title, searchText)
+            || Contains(media.Authors, searchText)
+            || Contains(media.MediaType, searchText)
+            || Contains(media.ISBN, searchText)
+            || Contains(media.ISAN, searchText)
+            || Contains(media.SAB, searchText)
+            || Contains(media.ReleaseYear, searchText)
+            || Contains(media.Language, searchText);
+    }
+
+    private static bool Contains(string? value, string searchText)
+        => value?.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) == true;
+
+    private void Txt_Search_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        _mediaView?.Refresh();
+        UpdateCatalogStatus();
+    }
+
+    private void UpdateCatalogStatus()
+    {
+        Txt_Status.Text = $"Visar {MediaGrid.Items.Count} av {_allMedia.Count} böcker, filmer och ljudböcker.";
+    }
+
     private async void Btn_Refresh_Click(object sender, RoutedEventArgs e)
         => await LoadMediaAsync();
 
@@ -128,7 +215,7 @@ ORDER BY m.Name;";
                 return;
             }
 
-            MessageBox.Show($"Du har lånat {selectedMedia.MediaType.ToLowerInvariant()}en '{selectedMedia.Title}'. Förfallodatum är om 30 dagar.", "Lån registrerat", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Du har lånat {selectedMedia.MediaType.ToLowerInvariant()}en '{selectedMedia.Title}'. Förfallodatum är om 1 minut.", "Lån registrerat", MessageBoxButton.OK, MessageBoxImage.Information);
             await LoadMediaAsync();
         }
         catch (Exception ex)
@@ -205,7 +292,7 @@ SELECT EXISTS (
                 }
             }
 
-            await using var createLoan = new MySqlCommand("INSERT INTO Loans (User_ID, Copy_ID, DueDate) VALUES (@userId, @copyId, UTC_TIMESTAMP() + INTERVAL 30 DAY)", connection, transaction);
+            await using var createLoan = new MySqlCommand("INSERT INTO Loans (User_ID, Copy_ID, DueDate) VALUES (@userId, @copyId, UTC_TIMESTAMP() + INTERVAL 1 MINUTE)", connection, transaction);
             createLoan.Parameters.AddWithValue("@userId", userId);
             createLoan.Parameters.AddWithValue("@copyId", copyId);
             await createLoan.ExecuteNonQueryAsync();
