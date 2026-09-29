@@ -185,7 +185,7 @@
                 </StackPanel>
 
                 <!-- Author Info Section -->
-                <TextBlock Text="Författare" FontSize="16" FontWeight="Bold" Margin="0,15,0,5" HorizontalAlignment="Center"/>
+                <TextBlock Text="Författare (kan vara flera)" FontSize="16" FontWeight="Bold" Margin="0,15,0,5" HorizontalAlignment="Center"/>
 
                 <StackPanel Margin="3" Orientation="Horizontal">
                     <TextBlock Text="Förnamn:" Width="90" VerticalAlignment="Center"/>
@@ -197,13 +197,31 @@
                     <TextBox x:Name="Create_Author_LastName" Width="180" Margin="3"/>
                 </StackPanel>
 
+                <!-- Knappar för att lägga till/rensa författare i den temporära listan -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,5">
+                    <Button x:Name="Btn_Add_Author_To_List" 
+                        Content="+ Lägg till författare" 
+                        Click="Btn_Add_Author_To_List_Click" 
+                        Padding="5,2" 
+                        Margin="0,0,5,0"/>      
+
+                    <Button x:Name="Btn_Clear_Authors" 
+                        Content="Rensa listan" 
+                        Click="Btn_Clear_Authors_Click" 
+                        Padding="5,2"/>
+                </StackPanel>
+
+                <!-- Visar vilka författare som är tillagda för detta media hittills -->
+                <TextBlock Text="Tillagda författare:" FontSize="12" FontWeight="SemiBold" Margin="0,5,0,2" HorizontalAlignment="Center"/>
+                <ListBox x:Name="Lst_Added_Authors" Width="270" Height="60" Margin="0,0,0,10"/>
+
                 <Button x:Name="Btn_Create_Media" 
-                Content="Skapa Media &amp; Författare" 
-                Click="Btn_Create_Media_Click" 
-                Width="180" 
-                Padding="6,3" 
-                Margin="0,15,0,0" 
-                HorizontalAlignment="Center"/>
+                    Content="Skapa Media &amp; Spara" 
+                    Click="Btn_Create_Media_Click" 
+                    Width="180" 
+                    Padding="6,3" 
+                    Margin="0,10,0,0" 
+                    HorizontalAlignment="Center"/>
             </StackPanel>
         </ScrollViewer>
 

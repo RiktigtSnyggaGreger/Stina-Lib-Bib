@@ -6,9 +6,22 @@ using System.Windows.Controls;
 
 namespace Biblans_Tråkia_Surtant
 {
+
+    public class TempAuthor
+    {
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+
+        public override string ToString()
+        {
+            return $"{FirstName} {LastName}";
+        }
+    }
     public partial class AdminMeidaPage : Page
     {
         private string connectionString = "Server=127.0.0.1;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;";
+
+        private System.Collections.Generic.List<TempAuthor> selectedAuthors = new System.Collections.Generic.List<TempAuthor>();
 
         // Store copies table in memory for fast real-time filtering
         private DataTable copiesTable;
@@ -51,16 +64,18 @@ namespace Biblans_Tråkia_Surtant
                 {
                     await connection.OpenAsync();
 
+                    // Här klistrar du in den nya SQL-frågan:
                     string query = @"
-                        SELECT 
-                            Media.Media_ID, 
-                            Media.Name AS Title, 
-                            Media.Value, 
-                            COALESCE(CONCAT(Author.Name, ' ', Author.LastName), 'Ingen författare') AS MediaAuthor
-                        FROM Media
-                        LEFT JOIN Media_Authors ON Media.Media_ID = Media_Authors.Media_ID
-                        LEFT JOIN Author ON Media_Authors.Author_ID = Author.Author_ID;";
-                    mediaTable = new DataTable();
+                SELECT 
+                    Media.Media_ID, 
+                    Media.Name AS Title, 
+                    Media.Value, 
+                    COALESCE(GROUP_CONCAT(CONCAT(Author.Name, ' ', Author.LastName) SEPARATOR ', '), 'Ingen författare') AS MediaAuthor
+                FROM Media
+                LEFT JOIN Media_Authors ON Media.Media_ID = Media_Authors.Media_ID
+                LEFT JOIN Author ON Media_Authors.Author_ID = Author.Author_ID
+                GROUP BY Media.Media_ID, Media.Name, Media.Value;";
+
                     using (var cmd = new MySqlCommand(query, connection))
                     using (var adapter = new MySqlDataAdapter(cmd))
                     {
@@ -292,6 +307,37 @@ namespace Biblans_Tråkia_Surtant
         }
 
 
+                        // make possible to have more then 1 author per media
+        private void Btn_Add_Author_To_List_Click(object sender, RoutedEventArgs e)
+        {
+            string fName = Create_Author_Name.Text.Trim();
+            string lName = Create_Author_LastName.Text.Trim();
+
+            if (string.IsNullOrEmpty(fName) || string.IsNullOrEmpty(lName))
+            {
+                MessageBox.Show("Fyll i både förnamn och efternamn på författaren.", "Incomplete input", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Lägg till i listan
+            selectedAuthors.Add(new TempAuthor { FirstName = fName, LastName = lName });
+
+            // Uppdatera UI-listan
+            Lst_Added_Authors.ItemsSource = null;
+            Lst_Added_Authors.ItemsSource = selectedAuthors;
+
+            // Rensa textfälten för författare så man enkelt kan skriva nästa
+            Create_Author_Name.Clear();
+            Create_Author_LastName.Clear();
+        }
+
+        private void Btn_Clear_Authors_Click(object sender, RoutedEventArgs e)
+        {
+            selectedAuthors.Clear();
+            Lst_Added_Authors.ItemsSource = null;
+        }
+
+
 
 
 
@@ -318,62 +364,30 @@ namespace Biblans_Tråkia_Surtant
 
         private async void Btn_Create_Media_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Validera indata
             string title = Create_Media_Title.Text.Trim();
             string sab = Create_Media_SAB.Text.Trim();
             string language = Create_Media_Language.Text.Trim();
-            string authorName = Create_Author_Name.Text.Trim();
-            string authorLastName = Create_Author_LastName.Text.Trim();
-            string mediaType = (Create_Media_Type.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Bok";
-            string bookIsbn = Create_Book_ISBN.Text.Trim();
-            string movieIsan = Create_Movie_ISAN.Text.Trim();
-            string audiobookIsbn = Create_AudioBook_ISBN.Text.Trim();
-            string pagesText = Create_Book_Pages.Text.Trim();
-            string movieLengthText = Create_Movie_Length.Text.Trim();
-            string audiobookLengthText = Create_AudioBook_Length.Text.Trim();
 
-            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(sab) ||
-                string.IsNullOrEmpty(language) || string.IsNullOrEmpty(authorName) ||
-                string.IsNullOrEmpty(authorLastName))
+            // Om man har skrivit något i författarfälten men glömt klicka på "+ Lägg till", lägg till den automatiskt
+            if (!string.IsNullOrEmpty(Create_Author_Name.Text.Trim()) && !string.IsNullOrEmpty(Create_Author_LastName.Text.Trim()))
             {
-                MessageBox.Show("Fyll i minst Titel, SAB-kod, Språk samt Författarens Förnamn och Efternamn.",
-                                "Saknad information", MessageBoxButton.OK, MessageBoxImage.Warning);
+                selectedAuthors.Add(new TempAuthor
+                {
+                    FirstName = Create_Author_Name.Text.Trim(),
+                    LastName = Create_Author_LastName.Text.Trim()
+                });
+            }
+
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(sab) || string.IsNullOrEmpty(language))
+            {
+                MessageBox.Show("Fyll i minst Titel, SAB-kod och Språk.", "Saknad information", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            int? pages = null;
-            int? mediaLength = null;
-            if (mediaType == "Bok")
+            if (selectedAuthors.Count == 0)
             {
-                if (string.IsNullOrWhiteSpace(bookIsbn) ||
-                    (!string.IsNullOrEmpty(pagesText) && (!int.TryParse(pagesText, out var parsedPages) || parsedPages <= 0)))
-                {
-                    MessageBox.Show("Ange ISBN och ett giltigt sidantal om du vill fylla i sidor.", "Ogiltig bokinformation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                if (int.TryParse(pagesText, out var bookPages))
-                    pages = bookPages;
-            }
-            else if (mediaType == "Film")
-            {
-                if (string.IsNullOrWhiteSpace(movieIsan) || !int.TryParse(movieLengthText, out var movieLength) || movieLength <= 0)
-                {
-                    MessageBox.Show("Ange ISAN och en filmlängd i minuter som är större än 0.", "Ogiltig filminformation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                mediaLength = movieLength;
-            }
-            else if (mediaType == "Ljudbok")
-            {
-                if (string.IsNullOrWhiteSpace(audiobookIsbn) || !int.TryParse(audiobookLengthText, out var audiobookLength) || audiobookLength <= 0)
-                {
-                    MessageBox.Show("Ange ISBN och en ljudbokslängd i minuter som är större än 0.", "Ogiltig ljudboksinformation", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-
-                mediaLength = audiobookLength;
+                MessageBox.Show("Lägg till minst en författare till mediet.", "Saknar författare", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
             int.TryParse(Create_Media_Value.Text.Trim(), out int value);
@@ -386,48 +400,15 @@ namespace Biblans_Tråkia_Surtant
                 {
                     await connection.OpenAsync();
 
-                    // Använd en transaktion för att säkerställa att allt sparas korrekt
                     using (var transaction = await connection.BeginTransactionAsync())
                     {
                         try
                         {
-                            //  Kolla om författaren redan finns, annars skapa ny
-                            int authorId;
-                            string checkAuthorQuery = "SELECT Author_ID FROM Author WHERE Name = @AName AND LastName = @ALastName LIMIT 1;";
-
-                            using (var cmdCheck = new MySqlCommand(checkAuthorQuery, connection, transaction))
-                            {
-                                cmdCheck.Parameters.AddWithValue("@AName", authorName);
-                                cmdCheck.Parameters.AddWithValue("@ALastName", authorLastName);
-
-                                var result = await cmdCheck.ExecuteScalarAsync();
-
-                                if (result != null && result != DBNull.Value)
-                                {
-                                    authorId = Convert.ToInt32(result);
-                                }
-                                else
-                                {
-                                    // Skapa ny författare
-                                    string insertAuthorQuery = @"
-                                INSERT INTO Author (Name, LastName) 
-                                VALUES (@AName, @ALastName);
-                                SELECT LAST_INSERT_ID();";
-
-                                    using (var cmdInsertAuthor = new MySqlCommand(insertAuthorQuery, connection, transaction))
-                                    {
-                                        cmdInsertAuthor.Parameters.AddWithValue("@AName", authorName);
-                                        cmdInsertAuthor.Parameters.AddWithValue("@ALastName", authorLastName);
-                                        authorId = Convert.ToInt32(await cmdInsertAuthor.ExecuteScalarAsync());
-                                    }
-                                }
-                            }
-
-                            // Skapa mediet i Media-tabellen
+                            // 1. Skapa själva mediet först
                             string insertMediaQuery = @"
-                        INSERT INTO Media (Name, Value, SAB, Release_Year, Language, Description) 
-                        VALUES (@Name, @Value, @SAB, @Year, @Language, @Description);
-                        SELECT LAST_INSERT_ID();";
+                                INSERT INTO Media (Name, Value, SAB, Release_Year, Language, Description) 
+                                VALUES (@Name, @Value, @SAB, @Year, @Language, @Description);
+                                SELECT LAST_INSERT_ID();";
 
                             int mediaId;
                             using (var cmdInsertMedia = new MySqlCommand(insertMediaQuery, connection, transaction))
@@ -442,71 +423,73 @@ namespace Biblans_Tråkia_Surtant
                                 mediaId = Convert.ToInt32(await cmdInsertMedia.ExecuteScalarAsync());
                             }
 
-                            string insertSubtypeQuery = mediaType switch
+                            // 2. Loopa igenom alla författare i listan
+                            foreach (var author in selectedAuthors)
                             {
-                                "Bok" => "INSERT INTO Book (Media_ID, ISBN, Pages) VALUES (@MediaID, @ISBN, @Pages);",
-                                "Film" => "INSERT INTO Movie (Media_ID, ISAN, Length) VALUES (@MediaID, @ISAN, @Length);",
-                                "Ljudbok" => "INSERT INTO AudioBook (Media_ID, ISBN, Length) VALUES (@MediaID, @ISBN, @Length);",
-                                _ => throw new InvalidOperationException("Okänd mediatyp.")
-                            };
+                                int authorId;
 
-                            using (var cmdSubtype = new MySqlCommand(insertSubtypeQuery, connection, transaction))
-                            {
-                                cmdSubtype.Parameters.AddWithValue("@MediaID", mediaId);
-                                if (mediaType == "Bok")
+                                // Kolla om författaren redan finns
+                                string checkAuthorQuery = "SELECT Author_ID FROM Author WHERE Name = @AName AND LastName = @ALastName LIMIT 1;";
+                                using (var cmdCheck = new MySqlCommand(checkAuthorQuery, connection, transaction))
                                 {
-                                    cmdSubtype.Parameters.AddWithValue("@ISBN", bookIsbn);
-                                    cmdSubtype.Parameters.AddWithValue("@Pages", pages.HasValue ? (object)pages.Value : DBNull.Value);
-                                }
-                                else if (mediaType == "Film")
-                                {
-                                    cmdSubtype.Parameters.AddWithValue("@ISAN", movieIsan);
-                                    cmdSubtype.Parameters.AddWithValue("@Length", mediaLength!.Value);
-                                }
-                                else
-                                {
-                                    cmdSubtype.Parameters.AddWithValue("@ISBN", audiobookIsbn);
-                                    cmdSubtype.Parameters.AddWithValue("@Length", mediaLength!.Value);
+                                    cmdCheck.Parameters.AddWithValue("@AName", author.FirstName);
+                                    cmdCheck.Parameters.AddWithValue("@ALastName", author.LastName);
+
+                                    var result = await cmdCheck.ExecuteScalarAsync();
+
+                                    if (result != null && result != DBNull.Value)
+                                    {
+                                        authorId = Convert.ToInt32(result);
+                                    }
+                                    else
+                                    {
+                                        // Skapa ny författare
+                                        string insertAuthorQuery = @"
+                                            INSERT INTO Author (Name, LastName) 
+                                            VALUES (@AName, @ALastName);
+                                            SELECT LAST_INSERT_ID();";
+
+                                        using (var cmdInsertAuthor = new MySqlCommand(insertAuthorQuery, connection, transaction))
+                                        {
+                                            cmdInsertAuthor.Parameters.AddWithValue("@AName", author.FirstName);
+                                            cmdInsertAuthor.Parameters.AddWithValue("@ALastName", author.LastName);
+                                            authorId = Convert.ToInt32(await cmdInsertAuthor.ExecuteScalarAsync());
+                                        }
+                                    }
                                 }
 
-                                await cmdSubtype.ExecuteNonQueryAsync();
+                                // 3. Koppla författaren till mediet i Media_Authors
+                                string insertRelationQuery = "INSERT INTO Media_Authors (Media_ID, Author_ID) VALUES (@MediaID, @AuthorID);";
+                                using (var cmdRelation = new MySqlCommand(insertRelationQuery, connection, transaction))
+                                {
+                                    cmdRelation.Parameters.AddWithValue("@MediaID", mediaId);
+                                    cmdRelation.Parameters.AddWithValue("@AuthorID", authorId);
+                                    await cmdRelation.ExecuteNonQueryAsync();
+                                }
                             }
 
-                            // Koppla Media och Författare i kopplings-tabellen Media_Authors
-                            string insertRelationQuery = "INSERT INTO Media_Authors (Media_ID, Author_ID) VALUES (@MediaID, @AuthorID);";
-                            using (var cmdRelation = new MySqlCommand(insertRelationQuery, connection, transaction))
-                            {
-                                cmdRelation.Parameters.AddWithValue("@MediaID", mediaId);
-                                cmdRelation.Parameters.AddWithValue("@AuthorID", authorId);
-                                await cmdRelation.ExecuteNonQueryAsync();
-                            }
-
-                            // Bekräfta transaktionen
+                            // Spara allt
                             await transaction.CommitAsync();
 
-                            MessageBox.Show("Mediat har skapats och kopplats till författaren!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show($"Mediet har skapats och kopplats till {selectedAuthors.Count} st författare!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                            // Rensa formuläret
+                            // Rensa formulär och temporär lista
                             Create_Media_Title.Clear();
                             Create_Media_Value.Clear();
                             Create_Media_SAB.Clear();
                             Create_Media_Year.Clear();
                             Create_Media_Description.Clear();
-                            Create_Book_ISBN.Clear();
-                            Create_Book_Pages.Clear();
-                            Create_Movie_ISAN.Clear();
-                            Create_Movie_Length.Clear();
-                            Create_AudioBook_ISBN.Clear();
-                            Create_AudioBook_Length.Clear();
                             Create_Author_Name.Clear();
                             Create_Author_LastName.Clear();
 
-                            // Uppdatera media-tabellen i UI
+                            selectedAuthors.Clear();
+                            Lst_Added_Authors.ItemsSource = null;
+
+                            // Uppdatera media-tabellen
                             LoadAllMedia();
                         }
                         catch
                         {
-                            // Rulla tillbaka om något fel uppstod under processen
                             await transaction.RollbackAsync();
                             throw;
                         }
