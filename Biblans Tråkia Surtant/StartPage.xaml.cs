@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using MySqlConnector;
 
@@ -12,12 +14,23 @@ namespace Biblans_Tråkia_Surtant;
 
 public partial class StartPage : Page
 {
-    private const string ConnectionString = "Server=127.0.0.1;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;";
+    private const string ConnectionString = "Server=127.0.0.1;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;CharSet=utf8mb4;";
+    private static readonly HttpClient HttpClient = new()
+    {
+        Timeout = TimeSpan.FromSeconds(4)
+    };
+
+    static StartPage()
+    {
+        HttpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+    }
+
     private readonly int _userId;
     private List<MediaItem> _allMedia = new();
     private ICollectionView? _mediaView;
     private readonly DispatcherTimer _overdueInvoiceTimer = new() { Interval = TimeSpan.FromMinutes(1) };
     private bool _isUpdatingInvoices;
+    private MediaItem? _selectedMediaForModal;
 
     public StartPage(int userId)
     {
@@ -96,7 +109,7 @@ WHERE l.User_ID = @userId
     private async Task<List<MediaItem>> GetMediaAsync()
     {
         const string sql = @"
-SELECT m.Media_ID, m.Name, m.Release_Year, m.Language, m.SAB, m.Description,
+SELECT m.Media_ID, m.Name, m.Release_Year, m.Language, m.SAB, m.Description, m.Cover_Url,
        CASE
            WHEN b.Media_ID IS NOT NULL THEN 'Bok'
            WHEN movie.Media_ID IS NOT NULL THEN 'Film'
@@ -148,6 +161,7 @@ ORDER BY m.Name;";
                 Language = GetNullableString(reader, "Language"),
                 SAB = GetNullableString(reader, "SAB"),
                 Description = GetNullableString(reader, "Description"),
+                CoverUrl = GetNullableString(reader, "Cover_Url"),
                 Authors = reader.GetString("Authors"),
                 AvailableCopies = reader.GetInt32("AvailableCopies")
             });
@@ -198,6 +212,94 @@ ORDER BY m.Name;";
     private async void Btn_Refresh_Click(object sender, RoutedEventArgs e)
         => await LoadMediaAsync();
 
+    private async void MediaGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MediaGrid.SelectedItem is not MediaItem selectedMedia)
+            return;
+
+        _selectedMediaForModal = selectedMedia;
+
+        // 1. Fyll textfält och visa modalen direkt
+        Modal_Media_Title.Text = selectedMedia.Title;
+        Modal_Media_Authors.Text = string.IsNullOrWhiteSpace(selectedMedia.Authors) ? "Okänd författare" : selectedMedia.Authors;
+        Modal_Media_Type.Text = $"Typ: {selectedMedia.MediaType}";
+        Modal_Media_Copies.Text = $"Tillgängliga exemplar: {selectedMedia.AvailableCopies}";
+        Modal_Media_Description.Text = string.IsNullOrWhiteSpace(selectedMedia.Description) ? "Ingen beskrivning finns." : selectedMedia.Description;
+
+        string? isbn = selectedMedia.ISBN?.Replace("-", "").Trim();
+        Modal_Media_Code.Text = !string.IsNullOrWhiteSpace(isbn) ? $"ISBN: {isbn}" : (string.IsNullOrWhiteSpace(selectedMedia.ISAN) ? "" : $"ISAN: {selectedMedia.ISAN}");
+
+        // 2. Nollställ bild och visa laddningsanimation
+        Modal_Media_Cover.Source = null;
+        Modal_No_Image_Text.Visibility = Visibility.Collapsed;
+        Modal_Image_Loading.Visibility = Visibility.Visible;
+        MediaDetailModal.Visibility = Visibility.Visible;
+
+        // 3. Hämta bildlänk från databasen (eller fallback till ISBN via Open Library)
+        string? imageUrl = await Task.Run(() => GetBookCoverUrl(selectedMedia.CoverUrl, isbn));
+
+        Modal_Image_Loading.Visibility = Visibility.Collapsed;
+
+        if (!string.IsNullOrEmpty(imageUrl))
+        {
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(imageUrl, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+
+                Modal_Media_Cover.Source = bitmap;
+            }
+            catch
+            {
+                Modal_No_Image_Text.Visibility = Visibility.Visible;
+            }
+        }
+        else
+        {
+            Modal_No_Image_Text.Visibility = Visibility.Visible;
+        }
+    }
+
+    private static string? GetBookCoverUrl(string? dbCoverUrl, string? isbn)
+    {
+        // Om en bildlänk finns sparad i databasen, använd den i första hand
+        if (!string.IsNullOrWhiteSpace(dbCoverUrl))
+        {
+            return dbCoverUrl;
+        }
+
+        // Annars kika på standardlänken via ISBN om det finns
+        if (!string.IsNullOrWhiteSpace(isbn))
+        {
+            return $"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg";
+        }
+
+        return null;
+    }
+
+    private void Btn_Close_Modal_Click(object sender, RoutedEventArgs e)
+    {
+        MediaDetailModal.Visibility = Visibility.Collapsed;
+        _selectedMediaForModal = null;
+        MediaGrid.SelectedItem = null;
+    }
+
+    private async void Btn_Modal_Borrow_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selectedMediaForModal == null)
+            return;
+
+        var mediaToBorrow = _selectedMediaForModal;
+        MediaDetailModal.Visibility = Visibility.Collapsed;
+        _selectedMediaForModal = null;
+        MediaGrid.SelectedItem = null;
+
+        await PerformBorrowAsync(mediaToBorrow);
+    }
+
     private async void Btn_Borrow_Click(object sender, RoutedEventArgs e)
     {
         if (MediaGrid.SelectedItem is not MediaItem selectedMedia)
@@ -206,8 +308,15 @@ ORDER BY m.Name;";
             return;
         }
 
+        await PerformBorrowAsync(selectedMedia);
+    }
+
+    private async Task PerformBorrowAsync(MediaItem media)
+    {
         try
         {
+            var borrowed = await BorrowMediaAsync(_userId, media.MediaId);
+            if (!borrowed)
             var result = await BorrowMediaAsync(_userId, selectedMedia.MediaId);
             if (result == BorrowResult.UnpaidInvoice)
             {
@@ -225,7 +334,7 @@ ORDER BY m.Name;";
                 return;
             }
 
-            MessageBox.Show($"Du har lånat {selectedMedia.MediaType.ToLowerInvariant()}en '{selectedMedia.Title}'. Förfallodatum är om 1 minut.", "Lån registrerat", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Du har lånat {media.MediaType.ToLowerInvariant()}en '{media.Title}'. Förfallodatum är om 1 minut.", "Lån registrerat", MessageBoxButton.OK, MessageBoxImage.Information);
             await LoadMediaAsync();
         }
         catch (Exception ex)
@@ -360,6 +469,7 @@ WHERE l.User_ID = @userId
         public string? Language { get; init; }
         public string? SAB { get; init; }
         public string? Description { get; init; }
+        public string? CoverUrl { get; init; }
         public string Authors { get; init; } = string.Empty;
         public int AvailableCopies { get; init; }
     }

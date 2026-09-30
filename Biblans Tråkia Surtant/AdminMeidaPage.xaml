@@ -151,7 +151,12 @@
                     <TextBox x:Name="Create_Media_Description" Width="180" Height="50" Margin="3" TextWrapping="Wrap" AcceptsReturn="True"/>
                 </StackPanel>
 
-                <StackPanel x:Name="BookFieldsPanel" Margin="3">
+                <StackPanel Margin="3" Orientation="Horizontal">
+                <TextBlock Text="Omslag URL:" Width="90" VerticalAlignment="Center"/>
+                <TextBox x:Name="Create_Media_CoverUrl" Width="180" Margin="3" ToolTip="Klistra in länk till bild (t.ex. från Libris eller nätet)"/>
+                </StackPanel>
+
+            <StackPanel x:Name="BookFieldsPanel" Margin="3">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="ISBN:" Width="90" VerticalAlignment="Center"/>
                         <TextBox x:Name="Create_Book_ISBN" Width="180" Margin="3"/>

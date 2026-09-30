@@ -25,7 +25,114 @@
         </StackPanel>
 
         <DataGrid x:Name="MediaGrid" Grid.Row="2" AutoGenerateColumns="True" IsReadOnly="True"
-                  SelectionMode="Single" SelectionUnit="FullRow" CanUserAddRows="False"/>
+                  SelectionMode="Single" SelectionUnit="FullRow" CanUserAddRows="False"
+                  SelectionChanged="MediaGrid_SelectionChanged"/>
+
         <TextBlock x:Name="Txt_Status" Grid.Row="3" Margin="0,8,0,0"/>
+
+        <!-- MODAL POPUP OVERLAY -->
+        <Grid x:Name="MediaDetailModal" 
+              Background="#80000000" 
+              Visibility="Collapsed" 
+              Grid.RowSpan="4">
+
+            <Border Background="White" 
+                    CornerRadius="10" 
+                    Padding="20" 
+                    Width="450" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <!-- Stängknapp -->
+                    <Button Content="✕" 
+                            Click="Btn_Close_Modal_Click" 
+                            HorizontalAlignment="Right" 
+                            Background="Transparent" 
+                            BorderThickness="0" 
+                            FontSize="16" 
+                            FontWeight="Bold" 
+                            Cursor="Hand"/>
+
+                    <!-- Innehåll i modalen -->
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,15">
+                        <!-- Omslagsbild & Laddningsstatus (Fixerad box) -->
+                        <Grid Width="130" Height="190" Margin="0,0,15,0" Background="#F0F0F0">
+
+                            <!-- Bilden -->
+                            <Image x:Name="Modal_Media_Cover" 
+               Stretch="Uniform" 
+               HorizontalAlignment="Center" 
+               VerticalAlignment="Center"/>
+
+                            <!-- Snurra / Text som visas under laddning -->
+                            <StackPanel x:Name="Modal_Image_Loading" 
+                    VerticalAlignment="Center" 
+                    HorizontalAlignment="Center" 
+                    Visibility="Collapsed">
+                                <ProgressBar IsIndeterminate="True" Width="80" Height="10"/>
+                                <TextBlock Text="Laddar bild..." FontSize="11" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                            </StackPanel>
+
+                            <!-- Text om bild saknas -->
+                            <TextBlock x:Name="Modal_No_Image_Text" 
+                   Text="Ingen bild tillgänglig" 
+                   FontSize="11" 
+                   Foreground="Gray" 
+                   TextWrapping="Wrap" 
+                   TextAlignment="Center" 
+                   VerticalAlignment="Center" 
+                   Margin="5"
+                   Visibility="Collapsed"/>
+                        </Grid>
+
+                        <!-- Detaljer till höger -->
+                        <StackPanel Width="250" VerticalAlignment="Top">
+  
+                            <TextBlock x:Name="Modal_Media_Title" 
+                                       FontSize="18" 
+                                       FontWeight="Bold" 
+                                       TextWrapping="Wrap" 
+                                       Margin="0,0,0,5"/>
+
+                            <TextBlock x:Name="Modal_Media_Authors" 
+                                       FontSize="14" 
+                                       Foreground="Gray" 
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,8"/>
+
+                            <TextBlock x:Name="Modal_Media_Type" 
+                                       FontSize="12" 
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,3"/>
+
+                            <TextBlock x:Name="Modal_Media_Code" 
+                                       FontSize="12" 
+                                       Margin="0,0,0,3"/>
+
+                            <TextBlock x:Name="Modal_Media_Copies" 
+                                       FontSize="12" 
+                                       Margin="0,0,0,8"/>
+
+                            <TextBlock x:Name="Modal_Media_Description" 
+                                       FontSize="12" 
+                                       TextWrapping="Wrap" 
+                                       MaxHeight="70" 
+                                       Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Låna-knapp i modalen -->
+                    <Button x:Name="Btn_Modal_Borrow" 
+                            Content="Låna Material" 
+                            Click="Btn_Modal_Borrow_Click" 
+                            Background="#4CAF50" 
+                            Foreground="White" 
+                            FontSize="15" 
+                            FontWeight="Bold" 
+                            Padding="10,8" 
+                            Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Page>
