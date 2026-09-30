@@ -69,17 +69,18 @@ namespace Biblans_Tråkia_Surtant
                                                 MessageBoxButton.OK,
                                                 MessageBoxImage.Information);
 
+                                LoginPanel.Visibility = Visibility.Collapsed;
+                                Btn_Logout.Visibility = Visibility.Visible;
+
                                 // Navigate or load user session here
                                 if (isAdmin)
                                 {
-                                    LoginPanel.Visibility = Visibility.Collapsed;
                                     //User is an admin -> Load AdminPage inside MainFrame
                                     MainFrame.Navigate(new AdminPage());
                                 }
                                 else
                                 {
                                     // User is a standard user -> Load StartPage inside MainFrame
-                                    LoginPanel.Visibility = Visibility.Collapsed;
                                     MainFrame.Navigate(new StartPage(userId));
                                 }
                                 }
@@ -95,6 +96,23 @@ namespace Biblans_Tråkia_Surtant
             {
                 MessageBox.Show($"Ett fel uppstod vid anslutning:\n{ex.Message}", "Anslutningsfel", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void Btn_Logout_Click(object sender, RoutedEventArgs e)
+        {
+            Session.CurrentUserId = null;
+            Session.CurrentUserName = null;
+
+            MainFrame.Content = null;
+            while (MainFrame.NavigationService?.RemoveBackEntry() != null)
+            {
+            }
+
+            Btn_Logout.Visibility = Visibility.Collapsed;
+            Login_Email_TextBox.Clear();
+            Login_Password_Box.Clear();
+            LoginPanel.Visibility = Visibility.Visible;
+            Login_Email_TextBox.Focus();
         }
     }
 }
