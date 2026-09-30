@@ -208,8 +208,18 @@ ORDER BY m.Name;";
 
         try
         {
-            var borrowed = await BorrowMediaAsync(_userId, selectedMedia.MediaId);
-            if (!borrowed)
+            var result = await BorrowMediaAsync(_userId, selectedMedia.MediaId);
+            if (result == BorrowResult.UnpaidInvoice)
+            {
+                MessageBox.Show(
+                    "Du har en obetald faktura. Betala den först innan du lånar mer material.",
+                    "Obetald faktura",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            if (result == BorrowResult.Unavailable)
             {
                 MessageBox.Show("Det valda materialet finns inte tillgängligt just nu.", "Inte tillgängligt", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
@@ -224,7 +234,7 @@ ORDER BY m.Name;";
         }
     }
 
-    private static async Task<bool> BorrowMediaAsync(int userId, int mediaId)
+    private static async Task<BorrowResult> BorrowMediaAsync(int userId, int mediaId)
     {
         await using var connection = new MySqlConnection(ConnectionString);
         await connection.OpenAsync();
@@ -232,6 +242,35 @@ ORDER BY m.Name;";
 
         try
         {
+            const string updateOverdueInvoicesSql = @"
+UPDATE Loans l
+JOIN Copies c ON c.Copy_ID = l.Copy_ID
+JOIN Media m ON m.Media_ID = c.Media_ID
+SET l.InvoiceAmount = CEILING(COALESCE(m.Value, 0) * 1.5)
+WHERE l.User_ID = @userId
+  AND l.IsReturned = 0
+  AND l.DueDate < UTC_TIMESTAMP()
+  AND COALESCE(l.InvoiceAmount, 0) = 0;";
+
+            await using (var updateInvoices = new MySqlCommand(updateOverdueInvoicesSql, connection, transaction))
+            {
+                updateInvoices.Parameters.AddWithValue("@userId", userId);
+                await updateInvoices.ExecuteNonQueryAsync();
+            }
+
+            await using (var checkInvoices = new MySqlCommand(
+                "SELECT EXISTS (SELECT 1 FROM Loans WHERE User_ID = @userId AND COALESCE(InvoiceAmount, 0) > 0)",
+                connection,
+                transaction))
+            {
+                checkInvoices.Parameters.AddWithValue("@userId", userId);
+                if (Convert.ToInt32(await checkInvoices.ExecuteScalarAsync()) != 0)
+                {
+                    await transaction.RollbackAsync();
+                    return BorrowResult.UnpaidInvoice;
+                }
+            }
+
             // Lock the media row to serialize first-copy creation and borrowing for this item.
             await using (var lockMedia = new MySqlCommand("SELECT Media_ID FROM Media WHERE Media_ID = @mediaId FOR UPDATE", connection, transaction))
             {
@@ -239,7 +278,7 @@ ORDER BY m.Name;";
                 if (await lockMedia.ExecuteScalarAsync() is null)
                 {
                     await transaction.RollbackAsync();
-                    return false;
+                    return BorrowResult.Unavailable;
                 }
             }
 
@@ -258,7 +297,7 @@ ORDER BY m.Name;";
                     if (copyCount > 0)
                     {
                         await transaction.RollbackAsync();
-                        return false;
+                        return BorrowResult.Unavailable;
                     }
 
                     await using var createCopy = new MySqlCommand("INSERT INTO Copies (Media_ID, Is_Loaned) VALUES (@mediaId, 1)", connection, transaction);
@@ -282,7 +321,7 @@ ORDER BY m.Name;";
             await createLoan.ExecuteNonQueryAsync();
 
             await transaction.CommitAsync();
-            return true;
+            return BorrowResult.Success;
         }
         catch
         {
@@ -294,6 +333,18 @@ ORDER BY m.Name;";
     private void Btn_MyLoans_Click(object sender, RoutedEventArgs e)
     {
         NavigationService?.Navigate(new MyLoansPage(_userId));
+    }
+
+    private void Btn_Historik_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService?.Navigate(new Historik(_userId));
+    }
+
+    private enum BorrowResult
+    {
+        Success,
+        Unavailable,
+        UnpaidInvoice
     }
 
     private sealed class MediaItem
