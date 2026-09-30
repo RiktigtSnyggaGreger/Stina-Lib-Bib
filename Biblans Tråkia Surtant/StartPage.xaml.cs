@@ -315,9 +315,8 @@ ORDER BY m.Name;";
     {
         try
         {
-            var borrowed = await BorrowMediaAsync(_userId, media.MediaId);
-            if (!borrowed)
-            var result = await BorrowMediaAsync(_userId, selectedMedia.MediaId);
+            var result = await BorrowMediaAsync(_userId, media.MediaId);
+
             if (result == BorrowResult.UnpaidInvoice)
             {
                 MessageBox.Show(
