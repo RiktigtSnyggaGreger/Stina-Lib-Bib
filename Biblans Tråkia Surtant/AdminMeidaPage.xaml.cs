@@ -367,8 +367,9 @@ namespace Biblans_Tråkia_Surtant
             string title = Create_Media_Title.Text.Trim();
             string sab = Create_Media_SAB.Text.Trim();
             string language = Create_Media_Language.Text.Trim();
+            string selectedType = (Create_Media_Type.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Bok";
 
-            // Om man har skrivit något i författarfälten men glömt klicka på "+ Lägg till", lägg till den automatiskt
+            // If user typed an author without clicking "+ Lägg till", append it automatically
             if (!string.IsNullOrEmpty(Create_Author_Name.Text.Trim()) && !string.IsNullOrEmpty(Create_Author_LastName.Text.Trim()))
             {
                 selectedAuthors.Add(new TempAuthor
@@ -404,7 +405,7 @@ namespace Biblans_Tråkia_Surtant
                     {
                         try
                         {
-                            // 1. Skapa själva mediet först
+                            // 1. Create main Media record
                             string insertMediaQuery = @"
                                 INSERT INTO Media (Name, Value, SAB, Release_Year, Language, Description) 
                                 VALUES (@Name, @Value, @SAB, @Year, @Language, @Description);
@@ -423,12 +424,55 @@ namespace Biblans_Tråkia_Surtant
                                 mediaId = Convert.ToInt32(await cmdInsertMedia.ExecuteScalarAsync());
                             }
 
-                            // 2. Loopa igenom alla författare i listan
+                            // 2. Insert into subtype table based on selected media type
+                            if (selectedType == "Bok")
+                            {
+                                string isbn = Create_Book_ISBN.Text.Trim();
+                                int.TryParse(Create_Book_Pages.Text.Trim(), out int pages);
+
+                                string insertBookQuery = "INSERT INTO Book (Media_ID, ISBN, Pages) VALUES (@MediaID, @ISBN, @Pages);";
+                                using (var cmdBook = new MySqlCommand(insertBookQuery, connection, transaction))
+                                {
+                                    cmdBook.Parameters.AddWithValue("@MediaID", mediaId);
+                                    cmdBook.Parameters.AddWithValue("@ISBN", isbn);
+                                    cmdBook.Parameters.AddWithValue("@Pages", pages > 0 ? (object)pages : DBNull.Value);
+                                    await cmdBook.ExecuteNonQueryAsync();
+                                }
+                            }
+                            else if (selectedType == "Film")
+                            {
+                                string isan = Create_Movie_ISAN.Text.Trim();
+                                int.TryParse(Create_Movie_Length.Text.Trim(), out int length);
+
+                                string insertMovieQuery = "INSERT INTO Movie (Media_ID, ISAN, Length) VALUES (@MediaID, @ISAN, @Length);";
+                                using (var cmdMovie = new MySqlCommand(insertMovieQuery, connection, transaction))
+                                {
+                                    cmdMovie.Parameters.AddWithValue("@MediaID", mediaId);
+                                    cmdMovie.Parameters.AddWithValue("@ISAN", isan);
+                                    cmdMovie.Parameters.AddWithValue("@Length", length);
+                                    await cmdMovie.ExecuteNonQueryAsync();
+                                }
+                            }
+                            else if (selectedType == "Ljudbok")
+                            {
+                                string isbn = Create_AudioBook_ISBN.Text.Trim();
+                                int.TryParse(Create_AudioBook_Length.Text.Trim(), out int length);
+
+                                string insertAudioBookQuery = "INSERT INTO AudioBook (Media_ID, ISBN, Length) VALUES (@MediaID, @ISBN, @Length);";
+                                using (var cmdAudio = new MySqlCommand(insertAudioBookQuery, connection, transaction))
+                                {
+                                    cmdAudio.Parameters.AddWithValue("@MediaID", mediaId);
+                                    cmdAudio.Parameters.AddWithValue("@ISBN", isbn);
+                                    cmdAudio.Parameters.AddWithValue("@Length", length);
+                                    await cmdAudio.ExecuteNonQueryAsync();
+                                }
+                            }
+
+                            // 3. Process each author in the list
                             foreach (var author in selectedAuthors)
                             {
                                 int authorId;
 
-                                // Kolla om författaren redan finns
                                 string checkAuthorQuery = "SELECT Author_ID FROM Author WHERE Name = @AName AND LastName = @ALastName LIMIT 1;";
                                 using (var cmdCheck = new MySqlCommand(checkAuthorQuery, connection, transaction))
                                 {
@@ -443,7 +487,6 @@ namespace Biblans_Tråkia_Surtant
                                     }
                                     else
                                     {
-                                        // Skapa ny författare
                                         string insertAuthorQuery = @"
                                             INSERT INTO Author (Name, LastName) 
                                             VALUES (@AName, @ALastName);
@@ -458,7 +501,7 @@ namespace Biblans_Tråkia_Surtant
                                     }
                                 }
 
-                                // 3. Koppla författaren till mediet i Media_Authors
+                                // 4. Link Author to Media
                                 string insertRelationQuery = "INSERT INTO Media_Authors (Media_ID, Author_ID) VALUES (@MediaID, @AuthorID);";
                                 using (var cmdRelation = new MySqlCommand(insertRelationQuery, connection, transaction))
                                 {
@@ -468,12 +511,12 @@ namespace Biblans_Tråkia_Surtant
                                 }
                             }
 
-                            // Spara allt
+                            // Commit transaction
                             await transaction.CommitAsync();
 
-                            MessageBox.Show($"Mediet har skapats och kopplats till {selectedAuthors.Count} st författare!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
+                            MessageBox.Show($"Mediet '{title}' ({selectedType}) har skapats och kopplats till {selectedAuthors.Count} st författare!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                            // Rensa formulär och temporär lista
+                            // Clear main fields
                             Create_Media_Title.Clear();
                             Create_Media_Value.Clear();
                             Create_Media_SAB.Clear();
@@ -482,10 +525,18 @@ namespace Biblans_Tråkia_Surtant
                             Create_Author_Name.Clear();
                             Create_Author_LastName.Clear();
 
+                            // Clear subtype fields
+                            Create_Book_ISBN.Clear();
+                            Create_Book_Pages.Clear();
+                            Create_Movie_ISAN.Clear();
+                            Create_Movie_Length.Clear();
+                            Create_AudioBook_ISBN.Clear();
+                            Create_AudioBook_Length.Clear();
+
                             selectedAuthors.Clear();
                             Lst_Added_Authors.ItemsSource = null;
 
-                            // Uppdatera media-tabellen
+                            // Refresh UI grid
                             LoadAllMedia();
                         }
                         catch

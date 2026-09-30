@@ -20,38 +20,70 @@
         <!-- Hidden navigation frame -->
         <Frame x:Name="AdminFrame" NavigationUIVisibility="Hidden"/>
 
-        <!-- LEFT COLUMN (Column 0): Active Loans -->
-        <ScrollViewer Grid.Row="0" Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="10">
+        <!-- LEFT COLUMN (Column 0): Active & Invoiced Loans (Spans 2 rows) -->
+        <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="10">
+            <!-- SINGLE StackPanel containing both tables -->
             <StackPanel HorizontalAlignment="Stretch">
+
+                <!-- Active Loans Section -->
                 <TextBlock Text="Active Loans" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
 
                 <DataGrid x:Name="ActiveLoansGrid" 
-          AutoGenerateColumns="False" 
-          IsReadOnly="True" 
-          GridLinesVisibility="Horizontal" SelectionChanged="ActiveLoansGrid_SelectionChanged">
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          GridLinesVisibility="Horizontal" 
+                          SelectionChanged="ActiveLoansGrid_SelectionChanged">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="User" Binding="{Binding FullName}" Width="*"/>
                         <DataGridTextColumn Header="Media" Binding="{Binding MediaTitle}" Width="*"/>
                         <DataGridTextColumn Header="Due Date" Binding="{Binding DueDate, StringFormat=yyyy-MM-dd}" Width="Auto"/>
 
-                        <!-- Button column inside the DataGrid row -->
                         <DataGridTemplateColumn Header="Remove" Width="Auto">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Content="Return" 
-                            Click="Btn_Admin_Deloan_Click" 
-                            Padding="5,2" 
-                            Margin="0"/>
+                                            Click="Btn_Admin_Deloan_Click" 
+                                            Padding="5,2" 
+                                            Margin="0"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+
+                <!-- Invoiced Loans Section wrapped in a GroupBox -->
+                <GroupBox Header="Fakturerade / Förfallna Lån" Margin="0,20,0,0">
+                    <DataGrid x:Name="InvoicedLoansGrid" AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Lån ID" Binding="{Binding Loan_ID}" />
+                            <DataGridTextColumn Header="Exemplar ID" Binding="{Binding Copy_ID}" />
+                            <DataGridTextColumn Header="Låntagare" Binding="{Binding FullName}" />
+                            <DataGridTextColumn Header="Titel" Binding="{Binding MediaTitle}" />
+                            <DataGridTextColumn Header="Förfallodatum" Binding="{Binding DueDate, StringFormat=yyyy-MM-dd}" />
+                            <!-- Invoice Amount Column -->
+                            <DataGridTextColumn Header="Fakturabelopp" Binding="{Binding InvoiceAmount, StringFormat='{}{0} kr'}" />
+
+                            <!-- Paid / Return Button Column -->
+                            <DataGridTemplateColumn Header="Åtgärd">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Betald &amp; Återlämnad" 
+                                                Click="Btn_Paid_And_Return_Click" 
+                                                Padding="5,2" 
+                                                Background="#4CAF50" 
+                                                Foreground="White" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </GroupBox>
+
             </StackPanel>
         </ScrollViewer>
 
         <!-- MIDDLE COLUMN (Column 1): Create User & Delete User -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10">
+        <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10">
             <StackPanel x:Name="CreateUserPanel" HorizontalAlignment="Center" VerticalAlignment="Top">
 
                 <TextBlock Text="Create User" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
@@ -101,15 +133,15 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- RIGHT COLUMN (Column 2):  / third section -->
-        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="10">
+        <!-- RIGHT COLUMN (Column 2): Third section -->
+        <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" VerticalScrollBarVisibility="Auto" Margin="10">
             <StackPanel x:Name="MediaManagementPanel" HorizontalAlignment="Stretch" VerticalAlignment="Top">
                 <Button x:Name="Btn_Admin_Media_Page" 
-                    Content="Media sida" 
-                    Click="Btn_Goto_Media_Click" 
-                    Padding="8,4" 
-                    Margin="0,8,0,0"
-                    HorizontalAlignment="Center"/>
+                        Content="Media sida" 
+                        Click="Btn_Goto_Media_Click" 
+                        Padding="8,4" 
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Center"/>
             </StackPanel>
         </ScrollViewer>
     </Grid>

@@ -18,9 +18,10 @@ namespace Biblans_Tråkia_Surtant
         {
             InitializeComponent();
 
-            // Automatically load the users into the grid when this page opens
+            // Automatically load all grids when page opens
             LoadUsers();
             LoadActiveLoans();
+            LoadInvoicedOverdueLoans();
         }
 
         private async void LoadUsers()
@@ -31,18 +32,13 @@ namespace Biblans_Tråkia_Surtant
                 {
                     await connection.OpenAsync();
 
-                    // Query that retrieves user info while omitting PasswordHash
                     string query = "SELECT User_ID, Name, Lastname, Email, IsAdmin FROM User;";
 
                     using (var cmd = new MySqlCommand(query, connection))
                     using (var adapter = new MySqlDataAdapter(cmd))
                     {
                         DataTable dataTable = new DataTable();
-
-                        // Fill the DataTable with query results
                         adapter.Fill(dataTable);
-
-                        // Bind the data directly to the WPF UI control
                         Admin_Show_Users.ItemsSource = dataTable.DefaultView;
                     }
                 }
@@ -56,6 +52,47 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
+        private async void LoadInvoicedOverdueLoans()
+        {
+            try
+            {
+                using (var connection = new MySqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    // Matchar XAML: FullName & MediaTitle
+                    string queryInvoicedLoans = @"
+                    SELECT 
+                        Loans.Loan_ID,
+                        Copies.Copy_ID,
+                        CONCAT(User.Name, ' ', User.Lastname) AS FullName,
+                        Media.Name AS MediaTitle,
+                        Loans.DueDate AS DueDate,
+                        Loans.InvoiceAmount AS InvoiceAmount
+                    FROM Loans
+                    JOIN User ON Loans.User_ID = User.User_ID
+                    JOIN Copies ON Loans.Copy_ID = Copies.Copy_ID
+                    JOIN Media ON Copies.Media_ID = Media.Media_ID
+                    WHERE Loans.InvoiceAmount > 0;";
+
+                    using (var cmd = new MySqlCommand(queryInvoicedLoans, connection))
+                    using (var adapter = new MySqlDataAdapter(cmd))
+                    {
+                        DataTable dataTable = new DataTable();
+                        adapter.Fill(dataTable);
+                        InvoicedLoansGrid.ItemsSource = dataTable.DefaultView;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Kunde inte hämta fakturerade lån:\n{ex.Message}",
+                                "Fel vid laddning av lån",
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+            }
+        }
+
         private async void LoadActiveLoans()
         {
             try
@@ -64,22 +101,22 @@ namespace Biblans_Tråkia_Surtant
                 {
                     await connection.OpenAsync();
 
-                    // MUST include Loans.Loan_ID and Loans.Copy_ID here!
-                    string query = @"
-                SELECT 
-                    Loans.Loan_ID,
-                    Loans.Copy_ID,
-                    CONCAT(User.Name, ' ', User.Lastname) AS FullName,
-                    Media.Name AS MediaTitle,
-                    Loans.DueDate
-                FROM Loans
-                JOIN User ON Loans.User_ID = User.User_ID
-                JOIN Copies ON Loans.Copy_ID = Copies.Copy_ID
-                JOIN Media ON Copies.Media_ID = Media.Media_ID
-                WHERE Loans.IsReturned = FALSE
-                ORDER BY Loans.DueDate ASC;";
+                    // Matchar XAML: FullName & MediaTitle
+                    string queryActiveLoans = @"
+                    SELECT 
+                        Loans.Loan_ID,
+                        Copies.Copy_ID,
+                        CONCAT(User.Name, ' ', User.Lastname) AS FullName,
+                        Media.Name AS MediaTitle,
+                        Loans.DueDate AS DueDate
+                    FROM Loans
+                    JOIN User ON Loans.User_ID = User.User_ID
+                    JOIN Copies ON Loans.Copy_ID = Copies.Copy_ID
+                    JOIN Media ON Copies.Media_ID = Media.Media_ID
+                    WHERE Loans.IsReturned = FALSE 
+                      AND (Loans.InvoiceAmount = 0 OR Loans.InvoiceAmount IS NULL);";
 
-                    using (var cmd = new MySqlCommand(query, connection))
+                    using (var cmd = new MySqlCommand(queryActiveLoans, connection))
                     using (var adapter = new MySqlDataAdapter(cmd))
                     {
                         DataTable dataTable = new DataTable();
@@ -97,7 +134,6 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
-        // Button Click Event Handler (matches Click="Btn_Create_User_Click" in XAML)
         private void Btn_Create_User_Click(object sender, RoutedEventArgs e)
         {
             Create_User();
@@ -111,7 +147,6 @@ namespace Biblans_Tråkia_Surtant
             string password = Create_User_Password.Password;
             bool isAdmin = Create_User_IsAdmin.IsChecked == true;
 
-            // Validate all required fields
             if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(lastname) ||
                 string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
             {
@@ -142,14 +177,12 @@ namespace Biblans_Tråkia_Surtant
 
                 MessageBox.Show("Användare har skapats!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                // Clear input controls
                 Create_User_Name.Clear();
                 Create_User_Lastname.Clear();
                 Create_User_Email.Clear();
                 Create_User_Password.Clear();
                 Create_User_IsAdmin.IsChecked = false;
 
-                // Refresh the table to display the newly inserted user
                 LoadUsers();
             }
             catch (Exception ex)
@@ -161,19 +194,13 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
-
-
         private void Btn_Goto_Media_Click(object sender, RoutedEventArgs e)
         {
-            
             this.NavigationService?.Navigate(new AdminMeidaPage());
         }
 
-
-
         private async void Btn_Delete_Selected_Click(object sender, RoutedEventArgs e)
         {
-            // 1. Check if the user has selected a row in the DataGrid
             if (Admin_Show_Users.SelectedItem == null)
             {
                 MessageBox.Show("Vänligen markera en användare i tabellen först.",
@@ -183,13 +210,11 @@ namespace Biblans_Tråkia_Surtant
                 return;
             }
 
-            // Cast the selected item to DataRowView to access column values
             DataRowView selectedRow = (DataRowView)Admin_Show_Users.SelectedItem;
             int userId = Convert.ToInt32(selectedRow["User_ID"]);
             string userName = selectedRow["Name"].ToString();
             string userLastName = selectedRow["Lastname"].ToString();
 
-            // Ask for confirmation before deleting
             MessageBoxResult confirm = MessageBox.Show(
                 $"Är du säker på att du vill ta bort {userName} {userLastName} (ID: {userId})?",
                 "Bekräfta borttagning",
@@ -199,7 +224,6 @@ namespace Biblans_Tråkia_Surtant
             if (confirm != MessageBoxResult.Yes)
                 return;
 
-            // SQL Delete
             try
             {
                 using (var connection = new MySqlConnection(connectionString))
@@ -220,7 +244,6 @@ namespace Biblans_Tråkia_Surtant
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Information);
 
-                // Refresh DataGrid
                 LoadUsers();
             }
             catch (Exception ex)
@@ -232,14 +255,10 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
-        private void ActiveLoansGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
+        private void ActiveLoansGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) { }
 
         private async void Btn_Admin_Deloan_Click(object sender, RoutedEventArgs e)
         {
-            // Get the button that was clicked and extract its row data
             Button button = sender as Button;
             if (button?.DataContext is DataRowView selectedRow)
             {
@@ -263,11 +282,10 @@ namespace Biblans_Tråkia_Surtant
                     {
                         await connection.OpenAsync();
 
-                        // 1. Mark loan as returned and set ReturnedDate
                         string updateLoanQuery = @"
-                    UPDATE Loans 
-                    SET IsReturned = TRUE, ReturnedDate = NOW() 
-                    WHERE Loan_ID = @LoanId;";
+                        UPDATE Loans 
+                        SET IsReturned = TRUE, ReturnedDate = NOW() 
+                        WHERE Loan_ID = @LoanId;";
 
                         using (var cmd = new MySqlCommand(updateLoanQuery, connection))
                         {
@@ -275,11 +293,10 @@ namespace Biblans_Tråkia_Surtant
                             await cmd.ExecuteNonQueryAsync();
                         }
 
-                        // 2. Mark copy as available again
                         string updateCopyQuery = @"
-                    UPDATE Copies 
-                    SET Is_Loaned = FALSE 
-                    WHERE Copy_ID = @CopyId;";
+                        UPDATE Copies 
+                        SET Is_Loaned = FALSE 
+                        WHERE Copy_ID = @CopyId;";
 
                         using (var cmd = new MySqlCommand(updateCopyQuery, connection))
                         {
@@ -290,12 +307,88 @@ namespace Biblans_Tråkia_Surtant
 
                     MessageBox.Show("Lånet har återlämnats!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                    // Refresh grid
                     LoadActiveLoans();
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Kunde inte återlämna lån:\n{ex.Message}", "Fel", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private async void Btn_Paid_And_Return_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.DataContext is DataRowView row)
+            {
+                try
+                {
+                    int loanId = Convert.ToInt32(row["Loan_ID"]);
+                    int copyId = Convert.ToInt32(row["Copy_ID"]);
+                    string title = row["MediaTitle"]?.ToString() ?? "Okänd media";
+                    int amount = row["InvoiceAmount"] != DBNull.Value ? Convert.ToInt32(row["InvoiceAmount"]) : 0;
+
+                    var result = MessageBox.Show(
+                        $"Vill du markera fakturan på {amount} kr som betald och ta bort exemplar {copyId} ({title}) från systemet?",
+                        "Bekräfta betalning och borttagning",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+
+                    if (result != MessageBoxResult.Yes)
+                        return;
+
+                    using (var connection = new MySqlConnection(connectionString))
+                    {
+                        await connection.OpenAsync();
+
+                        using (var transaction = await connection.BeginTransactionAsync())
+                        {
+                            try
+                            {
+                                string deleteLoanQuery = "DELETE FROM Loans WHERE Loan_ID = @LoanID;";
+                                using (var cmdLoan = new MySqlCommand(deleteLoanQuery, connection, transaction))
+                                {
+                                    cmdLoan.Parameters.AddWithValue("@LoanID", loanId);
+                                    await cmdLoan.ExecuteNonQueryAsync();
+                                }
+
+                                string deleteOtherLoansQuery = "DELETE FROM Loans WHERE Copy_ID = @CopyID;";
+                                using (var cmdOtherLoans = new MySqlCommand(deleteOtherLoansQuery, connection, transaction))
+                                {
+                                    cmdOtherLoans.Parameters.AddWithValue("@CopyID", copyId);
+                                    await cmdOtherLoans.ExecuteNonQueryAsync();
+                                }
+
+                                string deleteCopyQuery = "DELETE FROM Copies WHERE Copy_ID = @CopyID;";
+                                using (var cmdCopy = new MySqlCommand(deleteCopyQuery, connection, transaction))
+                                {
+                                    cmdCopy.Parameters.AddWithValue("@CopyID", copyId);
+                                    await cmdCopy.ExecuteNonQueryAsync();
+                                }
+
+                                await transaction.CommitAsync();
+                            }
+                            catch
+                            {
+                                await transaction.RollbackAsync();
+                                throw;
+                            }
+                        }
+                    }
+
+                    MessageBox.Show("Betalning registrerad och exemplaret har tagits bort ur systemet!",
+                                    "Framgång",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Information);
+
+                    LoadActiveLoans();
+                    LoadInvoicedOverdueLoans();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Kunde inte slutföra åtgärden:\n{ex.Message}",
+                                    "Fel vid hantering",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error);
                 }
             }
         }
