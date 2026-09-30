@@ -296,6 +296,11 @@ ORDER BY m.Name;";
         NavigationService?.Navigate(new MyLoansPage(_userId));
     }
 
+    private void Btn_Historik_Click(object sender, RoutedEventArgs e)
+    {
+        NavigationService?.Navigate(new Historik(_userId));
+    }
+
     private sealed class MediaItem
     {
         public int MediaId { get; init; }
