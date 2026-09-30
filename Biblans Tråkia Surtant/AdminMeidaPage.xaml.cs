@@ -367,6 +367,7 @@ namespace Biblans_Tråkia_Surtant
             string title = Create_Media_Title.Text.Trim();
             string sab = Create_Media_SAB.Text.Trim();
             string language = Create_Media_Language.Text.Trim();
+            string coverUrl = Create_Media_CoverUrl.Text.Trim(); // NYTT
             string selectedType = (Create_Media_Type.SelectedItem as ComboBoxItem)?.Content?.ToString() ?? "Bok";
 
             // If user typed an author without clicking "+ Lägg till", append it automatically
@@ -405,11 +406,11 @@ namespace Biblans_Tråkia_Surtant
                     {
                         try
                         {
-                            // 1. Create main Media record
+                            // 1. Create main Media record (innehåller nu även Cover_Url)
                             string insertMediaQuery = @"
-                                INSERT INTO Media (Name, Value, SAB, Release_Year, Language, Description) 
-                                VALUES (@Name, @Value, @SAB, @Year, @Language, @Description);
-                                SELECT LAST_INSERT_ID();";
+                        INSERT INTO Media (Name, Value, SAB, Release_Year, Language, Description, Cover_Url) 
+                        VALUES (@Name, @Value, @SAB, @Year, @Language, @Description, @CoverUrl);
+                        SELECT LAST_INSERT_ID();";
 
                             int mediaId;
                             using (var cmdInsertMedia = new MySqlCommand(insertMediaQuery, connection, transaction))
@@ -420,6 +421,7 @@ namespace Biblans_Tråkia_Surtant
                                 cmdInsertMedia.Parameters.AddWithValue("@Year", string.IsNullOrEmpty(year) ? DBNull.Value : (object)year);
                                 cmdInsertMedia.Parameters.AddWithValue("@Language", language);
                                 cmdInsertMedia.Parameters.AddWithValue("@Description", string.IsNullOrEmpty(description) ? DBNull.Value : (object)description);
+                                cmdInsertMedia.Parameters.AddWithValue("@CoverUrl", string.IsNullOrEmpty(coverUrl) ? DBNull.Value : (object)coverUrl); // NYTT
 
                                 mediaId = Convert.ToInt32(await cmdInsertMedia.ExecuteScalarAsync());
                             }
@@ -488,9 +490,9 @@ namespace Biblans_Tråkia_Surtant
                                     else
                                     {
                                         string insertAuthorQuery = @"
-                                            INSERT INTO Author (Name, LastName) 
-                                            VALUES (@AName, @ALastName);
-                                            SELECT LAST_INSERT_ID();";
+                                    INSERT INTO Author (Name, LastName) 
+                                    VALUES (@AName, @ALastName);
+                                    SELECT LAST_INSERT_ID();";
 
                                         using (var cmdInsertAuthor = new MySqlCommand(insertAuthorQuery, connection, transaction))
                                         {
@@ -522,6 +524,7 @@ namespace Biblans_Tråkia_Surtant
                             Create_Media_SAB.Clear();
                             Create_Media_Year.Clear();
                             Create_Media_Description.Clear();
+                            Create_Media_CoverUrl.Clear(); // NYTT: Rensa fältet
                             Create_Author_Name.Clear();
                             Create_Author_LastName.Clear();
 
