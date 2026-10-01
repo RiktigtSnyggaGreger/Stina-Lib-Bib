@@ -24,9 +24,20 @@
             <Button Content="Lånehistorik" Click="Btn_Historik_Click" Padding="12,6" Margin="8,0,0,0"/>
         </StackPanel>
 
-        <DataGrid x:Name="MediaGrid" Grid.Row="2" AutoGenerateColumns="True" IsReadOnly="True"
-                  SelectionMode="Single" SelectionUnit="FullRow" CanUserAddRows="False"
-                  SelectionChanged="MediaGrid_SelectionChanged"/>
+        <DataGrid x:Name="MediaGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True"
+          SelectionMode="Single" SelectionUnit="FullRow" CanUserAddRows="False"
+          SelectionChanged="MediaGrid_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Titel" Binding="{Binding Title}" Width="200"/>
+                <DataGridTextColumn Header="Författare" Binding="{Binding Authors}" Width="150"/>
+                <DataGridTextColumn Header="Typ" Binding="{Binding MediaType}" Width="80"/>
+                <DataGridTextColumn Header="ISBN" Binding="{Binding ISBN}" Width="110"/>
+                <DataGridTextColumn Header="ISAN" Binding="{Binding ISAN}" Width="110"/>
+                <DataGridTextColumn Header="År" Binding="{Binding ReleaseYear}" Width="60"/>
+                <DataGridTextColumn Header="Språk" Binding="{Binding Language}" Width="80"/>
+                <DataGridTextColumn Header="Tillgängliga" Binding="{Binding AvailableCopies}" Width="90"/>
+            </DataGrid.Columns>
+        </DataGrid>
 
         <TextBlock x:Name="Txt_Status" Grid.Row="3" Margin="0,8,0,0"/>
 
@@ -60,34 +71,33 @@
 
                             <!-- Bilden -->
                             <Image x:Name="Modal_Media_Cover" 
-               Stretch="Uniform" 
-               HorizontalAlignment="Center" 
-               VerticalAlignment="Center"/>
+                                   Stretch="Uniform" 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center"/>
 
                             <!-- Snurra / Text som visas under laddning -->
                             <StackPanel x:Name="Modal_Image_Loading" 
-                    VerticalAlignment="Center" 
-                    HorizontalAlignment="Center" 
-                    Visibility="Collapsed">
+                                        VerticalAlignment="Center" 
+                                        HorizontalAlignment="Center" 
+                                        Visibility="Collapsed">
                                 <ProgressBar IsIndeterminate="True" Width="80" Height="10"/>
                                 <TextBlock Text="Laddar bild..." FontSize="11" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5,0,0"/>
                             </StackPanel>
 
                             <!-- Text om bild saknas -->
                             <TextBlock x:Name="Modal_No_Image_Text" 
-                   Text="Ingen bild tillgänglig" 
-                   FontSize="11" 
-                   Foreground="Gray" 
-                   TextWrapping="Wrap" 
-                   TextAlignment="Center" 
-                   VerticalAlignment="Center" 
-                   Margin="5"
-                   Visibility="Collapsed"/>
+                                       Text="Ingen bild tillgänglig" 
+                                       FontSize="11" 
+                                       Foreground="Gray" 
+                                       TextWrapping="Wrap" 
+                                       TextAlignment="Center" 
+                                       VerticalAlignment="Center" 
+                                       Margin="5"
+                                       Visibility="Collapsed"/>
                         </Grid>
 
                         <!-- Detaljer till höger -->
                         <StackPanel Width="250" VerticalAlignment="Top">
-  
                             <TextBlock x:Name="Modal_Media_Title" 
                                        FontSize="18" 
                                        FontWeight="Bold" 
@@ -111,13 +121,19 @@
 
                             <TextBlock x:Name="Modal_Media_Copies" 
                                        FontSize="12" 
+                                       Margin="0,0,0,3"/>
+
+                            <!-- Visar sidor eller längd dynamiskt -->
+                            <TextBlock x:Name="Modal_Media_ExtraInfo" 
+                                       FontSize="12" 
                                        Margin="0,0,0,8"/>
 
-                            <TextBlock x:Name="Modal_Media_Description" 
-                                       FontSize="12" 
-                                       TextWrapping="Wrap" 
-                                       MaxHeight="70" 
-                                       Margin="0,4,0,0"/>
+                            <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
+                                <TextBlock x:Name="Modal_Media_Description" 
+                                           FontSize="12" 
+                                           TextWrapping="Wrap" 
+                                           Margin="0,4,0,0"/>
+                            </ScrollViewer>
                         </StackPanel>
                     </StackPanel>
 
