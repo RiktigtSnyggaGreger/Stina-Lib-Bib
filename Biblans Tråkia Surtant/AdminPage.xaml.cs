@@ -194,35 +194,56 @@ namespace Biblans_Tråkia_Surtant
             }
         }
 
-        private void Btn_Goto_Media_Click(object sender, RoutedEventArgs e)
+        private int _selectedUserIdForEdit;
+
+        // 1. När man klickar på "Redigera" på en rad
+        private void Btn_Open_Edit_Modal_Click(object sender, RoutedEventArgs e)
         {
-            this.NavigationService?.Navigate(new AdminMeidaPage());
+            if (sender is Button btn && btn.DataContext is DataRowView row)
+            {
+                _selectedUserIdForEdit = Convert.ToInt32(row["User_ID"]);
+
+                // Fyll i fälten med befintlig data
+                Edit_User_Name.Text = row["Name"]?.ToString() ?? "";
+                Edit_User_Lastname.Text = row["Lastname"]?.ToString() ?? "";
+                Edit_User_Email.Text = row["Email"]?.ToString() ?? "";
+
+                if (row["IsAdmin"] != DBNull.Value)
+                {
+                    Edit_User_IsAdmin.IsChecked = Convert.ToBoolean(row["IsAdmin"]);
+                }
+                else
+                {
+                    Edit_User_IsAdmin.IsChecked = false;
+                }
+
+                Edit_User_Password.Clear(); // Nollställ lösenordsfältet
+
+                // Visa modalen
+                EditUserModal.Visibility = Visibility.Visible;
+            }
         }
 
-        private async void Btn_Delete_Selected_Click(object sender, RoutedEventArgs e)
+        // 2. Stäng modalen utan att spara
+        private void Btn_Close_Edit_Modal_Click(object sender, RoutedEventArgs e)
         {
-            if (Admin_Show_Users.SelectedItem == null)
+            EditUserModal.Visibility = Visibility.Collapsed;
+        }
+
+        // 3. Spara ändringarna till databasen
+        private async void Btn_Save_Edit_User_Click(object sender, RoutedEventArgs e)
+        {
+            string name = Edit_User_Name.Text.Trim();
+            string lastname = Edit_User_Lastname.Text.Trim();
+            string email = Edit_User_Email.Text.Trim();
+            string newPassword = Edit_User_Password.Password;
+            bool isAdmin = Edit_User_IsAdmin.IsChecked == true;
+
+            if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(lastname) || string.IsNullOrEmpty(email))
             {
-                MessageBox.Show("Vänligen markera en användare i tabellen först.",
-                                "Ingen markering",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning);
+                MessageBox.Show("Namn, efternamn och e-post får inte vara tomma.", "Valideringsfel", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-
-            DataRowView selectedRow = (DataRowView)Admin_Show_Users.SelectedItem;
-            int userId = Convert.ToInt32(selectedRow["User_ID"]);
-            string userName = selectedRow["Name"].ToString();
-            string userLastName = selectedRow["Lastname"].ToString();
-
-            MessageBoxResult confirm = MessageBox.Show(
-                $"Är du säker på att du vill ta bort {userName} {userLastName} (ID: {userId})?",
-                "Bekräfta borttagning",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (confirm != MessageBoxResult.Yes)
-                return;
 
             try
             {
@@ -230,29 +251,55 @@ namespace Biblans_Tråkia_Surtant
                 {
                     await connection.OpenAsync();
 
-                    string query = "DELETE FROM User WHERE User_ID = @UserId;";
+                    string query;
+                    bool updatePassword = !string.IsNullOrEmpty(newPassword);
+
+                    // Om ett nytt lösenord har angetts uppdaterar vi det också, annars behålls det gamla
+                    if (updatePassword)
+                    {
+                        query = "UPDATE User SET Name = @Name, Lastname = @Lastname, Email = @Email, IsAdmin = @IsAdmin, PasswordHash = @Password WHERE User_ID = @UserId;";
+                    }
+                    else
+                    {
+                        query = "UPDATE User SET Name = @Name, Lastname = @Lastname, Email = @Email, IsAdmin = @IsAdmin WHERE User_ID = @UserId;";
+                    }
 
                     using (var cmd = new MySqlCommand(query, connection))
                     {
-                        cmd.Parameters.AddWithValue("@UserId", userId);
+                        cmd.Parameters.AddWithValue("@Name", name);
+                        cmd.Parameters.AddWithValue("@Lastname", lastname);
+                        cmd.Parameters.AddWithValue("@Email", email);
+                        cmd.Parameters.AddWithValue("@IsAdmin", isAdmin);
+                        cmd.Parameters.AddWithValue("@UserId", _selectedUserIdForEdit);
+
+                        if (updatePassword)
+                        {
+                            cmd.Parameters.AddWithValue("@Password", newPassword);
+                        }
+
                         await cmd.ExecuteNonQueryAsync();
                     }
                 }
 
-                MessageBox.Show($"Användare {userName} {userLastName} har tagits bort.",
-                                "Framgång",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Information);
+                MessageBox.Show("Användaren har uppdaterats!", "Framgång", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                LoadUsers();
+                EditUserModal.Visibility = Visibility.Collapsed;
+                LoadUsers(); // Ladda om tabellen så ändringarna syns direkt
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Kunde inte ta bort användaren:\n{ex.Message}",
-                                "Fel vid borttagning",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+                MessageBox.Show($"Kunde inte uppdatera användaren:\n{ex.Message}", "Fel vid sparande", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void Btn_Delete_Selected_Click(object sender, RoutedEventArgs e)
+        {
+            // Din logik för att radera markerad användare
+        }
+
+        private void Btn_Goto_Media_Click(object sender, RoutedEventArgs e)
+        {
+            AdminFrame.Navigate(typeof(AdminMeidaPage));
         }
 
         private void ActiveLoansGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) { }

@@ -82,7 +82,7 @@
             </StackPanel>
         </ScrollViewer>
 
-        <!-- MIDDLE COLUMN (Column 1): Create User & Delete User -->
+        <!-- MIDDLE COLUMN (Column 1): Create User & User Management -->
         <ScrollViewer Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10">
             <StackPanel x:Name="CreateUserPanel" HorizontalAlignment="Center" VerticalAlignment="Top">
 
@@ -115,13 +115,31 @@
 
                 <Button x:Name="Btn_Create_User" Content="Create user" Click="Btn_Create_User_Click" Width="180" Margin="8"/>
 
-                <TextBlock Text="Remove Users" FontSize="18" FontWeight="Bold" Margin="0,15,0,5" HorizontalAlignment="Center"/>
+                <TextBlock Text="Användare &amp; Hantering" FontSize="18" FontWeight="Bold" Margin="0,15,0,5" HorizontalAlignment="Center"/>
 
                 <StackPanel Margin="0,5,0,0" Orientation="Vertical" HorizontalAlignment="Center">
                     <DataGrid x:Name="Admin_Show_Users" 
-                              AutoGenerateColumns="True" 
+                              AutoGenerateColumns="False" 
                               IsReadOnly="True" 
-                              MaxHeight="120"/>
+                              MaxHeight="180">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding User_ID}" Width="40"/>
+                            <DataGridTextColumn Header="Namn" Binding="{Binding Name}" Width="80"/>
+                            <DataGridTextColumn Header="Efternamn" Binding="{Binding Lastname}" Width="90"/>
+                            <DataGridTextColumn Header="E-post" Binding="{Binding Email}" Width="120"/>
+                            <DataGridTextColumn Header="Admin" Binding="{Binding IsAdmin}" Width="50"/>
+
+                            <DataGridTemplateColumn Header="Åtgärd" Width="Auto">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Content="Redigera" 
+                                                Click="Btn_Open_Edit_Modal_Click" 
+                                                Padding="5,2"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
 
                     <Button x:Name="Btn_Delete_Selected" 
                             Content="Ta bort markerad användare" 
@@ -130,6 +148,7 @@
                             Margin="0,8,0,0"
                             HorizontalAlignment="Center"/>
                 </StackPanel>
+
             </StackPanel>
         </ScrollViewer>
 
@@ -144,5 +163,71 @@
                         HorizontalAlignment="Center"/>
             </StackPanel>
         </ScrollViewer>
+
+        <!-- MODAL POPUP FÖR REDIGERING (Ligger sist i huvud-Griden) -->
+        <Grid x:Name="EditUserModal" 
+              Background="#80000000" 
+              Visibility="Collapsed" 
+              Grid.ColumnSpan="3"
+              Grid.RowSpan="2">
+
+            <Border Background="White" 
+                    CornerRadius="10" 
+                    Padding="20" 
+                    Width="350" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center">
+                <StackPanel>
+                    <!-- Stängknapp -->
+                    <Button Content="✕" 
+                            Click="Btn_Close_Edit_Modal_Click" 
+                            HorizontalAlignment="Right" 
+                            Background="Transparent" 
+                            BorderThickness="0" 
+                            FontSize="16" 
+                            FontWeight="Bold" 
+                            Cursor="Hand"/>
+
+                    <TextBlock Text="Redigera användare" FontSize="18" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+
+                    <StackPanel Margin="5" Orientation="Horizontal">
+                        <TextBlock Text="Namn:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox x:Name="Edit_User_Name" Width="180" Margin="3"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5" Orientation="Horizontal">
+                        <TextBlock Text="Efternamn:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox x:Name="Edit_User_Lastname" Width="180" Margin="3"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5" Orientation="Horizontal">
+                        <TextBlock Text="E-post:" Width="80" VerticalAlignment="Center"/>
+                        <TextBox x:Name="Edit_User_Email" Width="180" Margin="3"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5" Orientation="Horizontal">
+                        <TextBlock Text="Admin?:" Width="80" VerticalAlignment="Center"/>
+                        <CheckBox x:Name="Edit_User_IsAdmin" Margin="3" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Margin="5" Orientation="Horizontal">
+                        <TextBlock Text="Nytt lösen:" Width="80" VerticalAlignment="Center"/>
+                        <PasswordBox x:Name="Edit_User_Password" Width="180" Margin="3" ToolTip="Lämna tomt om du inte vill ändra lösenord"/>
+                    </StackPanel>
+
+                    <!-- Spara-knapp -->
+                    <Button Content="Spara ändringar" 
+                            Click="Btn_Save_Edit_User_Click" 
+                            Background="#4CAF50" 
+                            Foreground="White" 
+                            FontSize="14" 
+                            FontWeight="Bold" 
+                            Padding="10,8" 
+                            Margin="0,15,0,0"
+                            Cursor="Hand"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
     </Grid>
 </Page>
