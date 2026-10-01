@@ -8,20 +8,28 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 1. The Frame that loads either AdminPage or StartPage -->
-        <Frame x:Name="MainFrame" Grid.Row="1" NavigationUIVisibility="Hidden"/>
-
-        <!-- 2. The Login Panel (Visible on startup, hidden after login) -->
-        <StackPanel x:Name="LoginPanel" Grid.RowSpan="2" Margin="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <TextBlock Text="Inloggning" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
-
-            <TextBox x:Name="Login_Email_TextBox" Width="220" Margin="5"/>
-            <PasswordBox x:Name="Login_Password_Box" Width="220" Margin="5"/>
-            <Button x:Name="Btn_Connection" Content="Logga in" Click="Btn_Connection_Click" Width="220" Margin="10"/>
+        <!-- Top bar med knappar för Inloggning/Utloggning -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8" ZIndex="10">
+            <Button x:Name="Btn_OpenLogin" Content="Logga in" Click="Btn_OpenLogin_Click" Padding="12,6" Margin="0,0,8,0"/>
+            <Button x:Name="Btn_Logout" Content="Logga ut" Click="Btn_Logout_Click" Padding="12,6" Visibility="Collapsed"/>
         </StackPanel>
 
-        <Button x:Name="Btn_Logout" Grid.Row="0" Content="Logga ut" Click="Btn_Logout_Click"
-                HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8"
-                Padding="12,6" Visibility="Collapsed" Panel.ZIndex="10"/>
+        <!-- The Frame that loads StartPage directly -->
+        <Frame x:Name="MainFrame" Grid.Row="1" NavigationUIVisibility="Hidden"/>
+
+        <!-- The Login Panel (Dold som standard, visas när man klickar på Logga in) -->
+        <Grid x:Name="LoginPanel" Grid.RowSpan="2" Background="#80000000" Visibility="Collapsed" ZIndex="20">
+            <Border Background="White" CornerRadius="10" Padding="20" Width="300" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <StackPanel>
+                    <TextBlock Text="Inloggning" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
+                    <TextBlock Text="E-post:" Margin="0,0,0,3"/>
+                    <TextBox x:Name="Login_Email_TextBox" Width="260" Margin="0,0,0,10" Padding="4"/>
+                    <TextBlock Text="Lösenord:" Margin="0,0,0,3"/>
+                    <PasswordBox x:Name="Login_Password_Box" Width="260" Margin="0,0,0,15" Padding="4"/>
+                    <Button x:Name="Btn_Connection" Content="Logga in" Click="Btn_Connection_Click" Width="260" Padding="6" Background="#4CAF50" Foreground="White" FontWeight="Bold"/>
+                    <Button Content="Avbryt" Click="Btn_CloseLogin_Click" Width="260" Margin="0,8,0,0" Padding="6"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </Window>
