@@ -24,6 +24,7 @@
                     <TextBlock Text="Inloggning" FontSize="20" FontWeight="Bold" Margin="0,0,0,15" HorizontalAlignment="Center"/>
                     <TextBlock Text="E-post:" Margin="0,0,0,3"/>
                     <TextBox x:Name="Login_Email_TextBox" Width="260" Margin="0,0,0,10" Padding="4"/>
+
                     <TextBlock Text="Lösenord:" Margin="0,0,0,3"/>
                     <PasswordBox x:Name="Login_Password_Box" Width="260" Margin="0,0,0,15" Padding="4"/>
                     <Button x:Name="Btn_Connection" Content="Logga in" Click="Btn_Connection_Click" Width="260" Padding="6" Background="#4CAF50" Foreground="White" FontWeight="Bold"/>

@@ -299,7 +299,10 @@ namespace Biblans_Tråkia_Surtant
 
         private void Btn_Goto_Media_Click(object sender, RoutedEventArgs e)
         {
-            AdminFrame.Navigate(typeof(AdminMeidaPage));
+            if (this.NavigationService != null)
+            {
+                this.NavigationService.Navigate(new AdminMeidaPage());
+            }
         }
 
         private void ActiveLoansGrid_SelectionChanged(object sender, SelectionChangedEventArgs e) { }

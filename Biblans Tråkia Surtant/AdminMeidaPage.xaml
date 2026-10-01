@@ -22,21 +22,20 @@
             <StackPanel HorizontalAlignment="Stretch">
                 <TextBlock Text="All Media" FontSize="20" FontWeight="Bold" Margin="0,0,0,10" HorizontalAlignment="Center"/>
 
-
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8" HorizontalAlignment="Center">
-
                     <TextBox x:Name="Txt_Search_Media" 
-             Width="180" 
-             Padding="3" 
-             TextChanged="Txt_Search_Media_TextChanged" 
-             ToolTip="Sök på Media ID, Titel eller Författare"/>
+                             Width="180" 
+                             Padding="3" 
+                             TextChanged="Txt_Search_Media_TextChanged" 
+                             ToolTip="Sök på Media ID, Titel eller Författare"/>
                 </StackPanel>
 
                 <DataGrid x:Name="ShowMediaGrid" 
                           AutoGenerateColumns="False" 
                           IsReadOnly="True" 
                           GridLinesVisibility="Horizontal" 
-                          SelectionChanged="ShowMediaGrid_SelectionChanged">
+                          SelectionChanged="ShowMediaGrid_SelectionChanged"
+                          MaxHeight="200">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="MediaID" Binding="{Binding Media_ID}" Width="Auto"/>
                         <DataGridTextColumn Header="Media" Binding="{Binding Title}" Width="*"/>
@@ -49,16 +48,16 @@
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                         <Button Content="+ Exemplar" 
-                        Click="Btn_Add_Copies_Click" 
-                        Padding="6,2" 
-                        Margin="0,0,4,0"
-                        Background="#E1F5FE"
-                        BorderBrush="#81D4FA"/>
+                                                Click="Btn_Add_Copies_Click" 
+                                                Padding="6,2" 
+                                                Margin="0,0,4,0"
+                                                Background="#E1F5FE"
+                                                BorderBrush="#81D4FA"/>
 
                                         <Button Content="Ta bort" 
-                        Click="Btn_Admin_Remove_Media_Click" 
-                        Padding="6,2" 
-                        Margin="0"/>
+                                                Click="Btn_Admin_Remove_Media_Click" 
+                                                Padding="6,2" 
+                                                Margin="0"/>
                                     </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
@@ -70,17 +69,17 @@
 
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8" HorizontalAlignment="Center">
                     <TextBox x:Name="Txt_Search_Copies" 
-             Width="180" 
-             Padding="3" 
-             TextChanged="Txt_Search_Copies_TextChanged" 
-             ToolTip="Sök på Copy ID, Media ID eller Titel"/>
+                             Width="180" 
+                             Padding="3" 
+                             TextChanged="Txt_Search_Copies_TextChanged" 
+                             ToolTip="Sök på Copy ID, Media ID eller Titel"/>
                 </StackPanel>
-                
+
                 <DataGrid x:Name="ShowCopiesGrid" 
-                  AutoGenerateColumns="False" 
-                  IsReadOnly="True" 
-                  GridLinesVisibility="Horizontal"
-                  MaxHeight="200">
+                          AutoGenerateColumns="False" 
+                          IsReadOnly="True" 
+                          GridLinesVisibility="Horizontal"
+                          MaxHeight="200">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Copy ID" Binding="{Binding Copy_ID}" Width="Auto"/>
                         <DataGridTextColumn Header="Media ID" Binding="{Binding Media_ID}" Width="Auto"/>
@@ -92,9 +91,9 @@
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Content="Ta bort" 
-                                    Click="Btn_Admin_Remove_Copy_Click" 
-                                    Padding="5,2" 
-                                    Margin="0"/>
+                                            Click="Btn_Admin_Remove_Copy_Click" 
+                                            Padding="5,2" 
+                                            Margin="0"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -104,7 +103,6 @@
         </ScrollViewer>
 
         <!-- MIDDLE COLUMN (Column 1): Add/Edit Media Forms -->
-        <!-- MIDDLE COLUMN (Column 1): Create Media & Author Form -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Margin="10">
             <StackPanel x:Name="CreateMediaPanel" HorizontalAlignment="Center" VerticalAlignment="Top">
 
@@ -152,11 +150,11 @@
                 </StackPanel>
 
                 <StackPanel Margin="3" Orientation="Horizontal">
-                <TextBlock Text="Omslag URL:" Width="90" VerticalAlignment="Center"/>
-                <TextBox x:Name="Create_Media_CoverUrl" Width="180" Margin="3" ToolTip="Klistra in länk till bild (t.ex. från Libris eller nätet)"/>
+                    <TextBlock Text="Omslag URL:" Width="90" VerticalAlignment="Center"/>
+                    <TextBox x:Name="Create_Media_CoverUrl" Width="180" Margin="3" ToolTip="Klistra in länk till bild (t.ex. från Libris eller nätet)"/>
                 </StackPanel>
 
-            <StackPanel x:Name="BookFieldsPanel" Margin="3">
+                <StackPanel x:Name="BookFieldsPanel" Margin="3">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="ISBN:" Width="90" VerticalAlignment="Center"/>
                         <TextBox x:Name="Create_Book_ISBN" Width="180" Margin="3"/>
@@ -208,7 +206,7 @@
                         Content="+ Lägg till författare" 
                         Click="Btn_Add_Author_To_List_Click" 
                         Padding="5,2" 
-                        Margin="0,0,5,0"/>      
+                        Margin="0,0,5,0"/>
 
                     <Button x:Name="Btn_Clear_Authors" 
                         Content="Rensa listan" 
