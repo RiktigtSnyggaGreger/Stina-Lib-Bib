@@ -224,6 +224,23 @@ ORDER BY m.Name;";
         Modal_Media_Authors.Text = string.IsNullOrWhiteSpace(selectedMedia.Authors) ? "Okänd författare" : selectedMedia.Authors;
         Modal_Media_Type.Text = $"Typ: {selectedMedia.MediaType}";
         Modal_Media_Copies.Text = $"Tillgängliga exemplar: {selectedMedia.AvailableCopies}";
+
+        // NY LOGIK: Visa sidor om det finns, annars längd (för film/ljudbok)
+        if (selectedMedia.Pages.HasValue)
+        {
+            Modal_Media_ExtraInfo.Text = $"Antal sidor: {selectedMedia.Pages.Value}";
+            Modal_Media_ExtraInfo.Visibility = Visibility.Visible;
+        }
+        else if (selectedMedia.Length.HasValue)
+        {
+            Modal_Media_ExtraInfo.Text = $"Längd: {selectedMedia.Length.Value} min";
+            Modal_Media_ExtraInfo.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            Modal_Media_ExtraInfo.Visibility = Visibility.Collapsed;
+        }
+
         Modal_Media_Description.Text = string.IsNullOrWhiteSpace(selectedMedia.Description) ? "Ingen beskrivning finns." : selectedMedia.Description;
 
         string? isbn = selectedMedia.ISBN?.Replace("-", "").Trim();
