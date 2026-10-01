@@ -42,6 +42,19 @@ public partial class StartPage : Page
         Unloaded += StartPage_Unloaded;
     }
 
+    private bool CheckIfLoggedIn()
+    {
+        if (_userId <= 0 || Session.CurrentUserId == null)
+        {
+            MessageBox.Show("Du måste vara inloggad för att kunna låna eller se lånehistorik",
+                            Session.CurrentUserId == null ? "Ej inloggad" : "Gästläge",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+            return false;
+        }
+        return true;
+    }
+
     private async void StartPage_Loaded(object sender, RoutedEventArgs e)
     {
         await LoadMediaAsync();
@@ -89,6 +102,52 @@ WHERE l.User_ID = @userId
         }
     }
 
+    private async void Btn_Modal_Borrow_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CheckIfLoggedIn())
+            return;
+
+        if (_selectedMediaForModal == null)
+            return;
+
+        var mediaToBorrow = _selectedMediaForModal;
+        MediaDetailModal.Visibility = Visibility.Collapsed;
+        _selectedMediaForModal = null;
+        MediaGrid.SelectedItem = null;
+
+        await PerformBorrowAsync(mediaToBorrow);
+    }
+
+    private async void Btn_Borrow_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CheckIfLoggedIn())
+            return;
+
+        if (MediaGrid.SelectedItem is not MediaItem selectedMedia)
+        {
+            MessageBox.Show("Välj en bok, film eller ljudbok först.", "Inget material valt", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await PerformBorrowAsync(selectedMedia);
+    }
+
+    private void Btn_MyLoans_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CheckIfLoggedIn())
+            return;
+
+        NavigationService?.Navigate(new MyLoansPage(_userId));
+    }
+
+    private void Btn_Historik_Click(object sender, RoutedEventArgs e)
+    {
+        if (!CheckIfLoggedIn())
+            return;
+
+        NavigationService?.Navigate(new Historik(_userId));
+    }
+
     private async Task LoadMediaAsync()
     {
         try
@@ -111,10 +170,10 @@ WHERE l.User_ID = @userId
         const string sql = @"
 SELECT m.Media_ID, m.Name, m.Release_Year, m.Language, m.SAB, m.Description, m.Cover_Url,
        CASE
-           WHEN b.Media_ID IS NOT NULL THEN 'Bok'
-           WHEN movie.Media_ID IS NOT NULL THEN 'Film'
-           WHEN audio.Media_ID IS NOT NULL THEN 'Ljudbok'
-           ELSE 'Bok'
+            WHEN b.Media_ID IS NOT NULL THEN 'Bok'
+            WHEN movie.Media_ID IS NOT NULL THEN 'Film'
+            WHEN audio.Media_ID IS NOT NULL THEN 'Ljudbok'
+            ELSE 'Bok'
        END AS MediaType,
        COALESCE(b.ISBN, audio.ISBN) AS ISBN,
        b.Pages,
@@ -304,30 +363,6 @@ ORDER BY m.Name;";
         MediaGrid.SelectedItem = null;
     }
 
-    private async void Btn_Modal_Borrow_Click(object sender, RoutedEventArgs e)
-    {
-        if (_selectedMediaForModal == null)
-            return;
-
-        var mediaToBorrow = _selectedMediaForModal;
-        MediaDetailModal.Visibility = Visibility.Collapsed;
-        _selectedMediaForModal = null;
-        MediaGrid.SelectedItem = null;
-
-        await PerformBorrowAsync(mediaToBorrow);
-    }
-
-    private async void Btn_Borrow_Click(object sender, RoutedEventArgs e)
-    {
-        if (MediaGrid.SelectedItem is not MediaItem selectedMedia)
-        {
-            MessageBox.Show("Välj en bok, film eller ljudbok först.", "Inget material valt", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
-        await PerformBorrowAsync(selectedMedia);
-    }
-
     private async Task PerformBorrowAsync(MediaItem media)
     {
         try
@@ -453,16 +488,6 @@ WHERE l.User_ID = @userId
             try { await transaction.RollbackAsync(); } catch { }
             throw;
         }
-    }
-
-    private void Btn_MyLoans_Click(object sender, RoutedEventArgs e)
-    {
-        NavigationService?.Navigate(new MyLoansPage(_userId));
-    }
-
-    private void Btn_Historik_Click(object sender, RoutedEventArgs e)
-    {
-        NavigationService?.Navigate(new Historik(_userId));
     }
 
     private enum BorrowResult

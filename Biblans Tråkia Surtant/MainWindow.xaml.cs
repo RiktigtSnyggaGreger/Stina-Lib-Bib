@@ -1,21 +1,9 @@
 ﻿using System;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using MySqlConnector;
 
 namespace Biblans_Tråkia_Surtant
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private string connectionString = "Server=127.0.0.1;Port=3306;Database=Biblioteks_System;User ID=root;Password=hemligt-losenord;";
@@ -23,11 +11,24 @@ namespace Biblans_Tråkia_Surtant
         public MainWindow()
         {
             InitializeComponent();
+
+            // Ladda mediakatalogen direkt vid start som gäst (ID 0) utan krav på inloggning
+            MainFrame.Navigate(new StartPage(0));
+        }
+
+        private void Btn_OpenLogin_Click(object sender, RoutedEventArgs e)
+        {
+            LoginPanel.Visibility = Visibility.Visible;
+            Login_Email_TextBox.Focus();
+        }
+
+        private void Btn_CloseLogin_Click(object sender, RoutedEventArgs e)
+        {
+            LoginPanel.Visibility = Visibility.Collapsed;
         }
 
         private async void Btn_Connection_Click(object sender, RoutedEventArgs e)
         {
-            // Read values from XAML controls
             string email = Login_Email_TextBox.Text.Trim();
             string password = Login_Password_Box.Password;
 
@@ -43,7 +44,6 @@ namespace Biblans_Tråkia_Surtant
                 {
                     await connection.OpenAsync();
 
-                    // Updated query targeting English column names (Name, Lastname)
                     string query = @"SELECT User_ID, Name, Lastname, IsAdmin 
                                      FROM User 
                                      WHERE Email = @Email AND PasswordHash = @Password;";
@@ -70,20 +70,21 @@ namespace Biblans_Tråkia_Surtant
                                                 MessageBoxImage.Information);
 
                                 LoginPanel.Visibility = Visibility.Collapsed;
+                                Btn_OpenLogin.Visibility = Visibility.Collapsed;
                                 Btn_Logout.Visibility = Visibility.Visible;
+                                Login_Email_TextBox.Clear();
+                                Login_Password_Box.Clear();
 
-                                // Navigate or load user session here
+                                // Navigera till rätt sida med den inloggade användarens ID
                                 if (isAdmin)
                                 {
-                                    //User is an admin -> Load AdminPage inside MainFrame
                                     MainFrame.Navigate(new AdminPage());
                                 }
                                 else
                                 {
-                                    // User is a standard user -> Load StartPage inside MainFrame
                                     MainFrame.Navigate(new StartPage(userId));
                                 }
-                                }
+                            }
                             else
                             {
                                 MessageBox.Show("Felaktig e-post eller lösenord.", "Inloggning misslyckades", MessageBoxButton.OK, MessageBoxImage.Error);
@@ -103,16 +104,11 @@ namespace Biblans_Tråkia_Surtant
             Session.CurrentUserId = null;
             Session.CurrentUserName = null;
 
-            MainFrame.Content = null;
-            while (MainFrame.NavigationService?.RemoveBackEntry() != null)
-            {
-            }
-
             Btn_Logout.Visibility = Visibility.Collapsed;
-            Login_Email_TextBox.Clear();
-            Login_Password_Box.Clear();
-            LoginPanel.Visibility = Visibility.Visible;
-            Login_Email_TextBox.Focus();
+            Btn_OpenLogin.Visibility = Visibility.Visible;
+
+            // Gå tillbaka till startsidan som gäst (ID 0)
+            MainFrame.Navigate(new StartPage(0));
         }
     }
 }
